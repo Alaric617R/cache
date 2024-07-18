@@ -395,21 +395,24 @@ end
 // index of MSHR entry that can be issued to memory
 logic [$clog2(`N_MSHR)-1:0] mshr_index_to_issue;
 logic issue2mem;
-int n_mshr_entry_freed_cnt = 0;
-int n_mshr_entry_occupied_cnt = 0;
 // connecting wires for renaming
 MSHR_ENTRY [`N_MSHR - 1 : 0] tmp_next_1_mshr_table;
+MSHR_ENTRY [`N_MSHR - 1 : 0] tmp_next_2_mshr_table;
+MSHR_ENTRY [`N_MSHR - 1 : 0] tmp_next_3_mshr_table;
 
 `ifdef DIRECT_MAPPED
 always_comb begin : manage_MSHR
-    next_mshr_table = mshr_table;
+
     tmp_next_1_mshr_table = mshr_table;
     next_n_mshr_avail = n_mshr_avail;
+    // counter for number of MSHR entry change
+    int n_mshr_entry_freed_cnt = 0;
+    int n_mshr_entry_occupied_cnt = 0;
     
     /** flush MSHR when done, invalidate all LOAD operations **/
     if (state == FLUSH) begin
         for (int i=0; i<`N_MSHR; i++) begin
-            next_mshr_table[i].valid = (mshr_table[i].mem_op == MEM_WRITE);
+            tmp_next_1_mshr_table[i].valid = (mshr_table[i].mem_op == MEM_WRITE);
         end
     end
 
@@ -419,7 +422,7 @@ always_comb begin : manage_MSHR
         for (int i=0; i<`N_MSHR;i++) begin
             if (mshr_table[i].Dmem2proc_tag == Dmem2proc_tag) begin
                 assert(mshr_table[i].mem_op == MEM_READ) else $display("MSHR: memory response tag matched with STORE operation!");
-                next_mshr_table[i] = '0;    // clear MSHR entry when finished
+                tmp_next_1_mshr_table[i] = '0;    // clear MSHR entry when finished
                 mshr2dcache_packet = mshr_table[i];
                 mshr2dcache_packet.Dmem2proc_data = Dmem2proc_data;
                 n_mshr_entry_freed_cnt ++;  // free one entry
@@ -427,17 +430,18 @@ always_comb begin : manage_MSHR
         end
     end
 
+    tmp_next_2_mshr_table = tmp_next_1_mshr_table;  // initialize wires
     /** allocate new MSHR entry when cache eviction happens (don't need to worry about state is FLUSH) **/
     if (vic_cache_line_evicted.valid & vic_cache_line_evicted.dirty) begin
         for (int i=0; i<`N_MSHR; i++)begin
-            if(~next_mshr_table[i].valid)begin
-                next_mshr_table[i].valid = '1;
-                next_mshr_table[i].is_req = '1;
-                next_mshr_table[i].mem_op = MEM_WRITE;
-                next_mshr_table[i].Dmem2proc_tag = '0;
-                next_mshr_table[i].Dmem2proc_data = vic_cache_line_evicted.block
-                next_mshr_table[i].cache_line_addr = {vic_cache_line_evicted.tag, 3'b0};    // since it is fully associative cache, no index bits
-                next_mshr_table[i].write_content = vic_cache_line_evicted.block;
+            if(~tmp_next_1_mshr_table[i].valid)begin
+                tmp_next_2_mshr_table[i].valid = '1;
+                tmp_next_2_mshr_table[i].is_req = '1;
+                tmp_next_2_mshr_table[i].mem_op = MEM_WRITE;
+                tmp_next_2_mshr_table[i].Dmem2proc_tag = '0;
+                tmp_next_2_mshr_table[i].Dmem2proc_data = vic_cache_line_evicted.block
+                tmp_next_2_mshr_table[i].cache_line_addr = {vic_cache_line_evicted.tag, 3'b0};    // since it is fully associative cache, no index bits
+                tmp_next_2_mshr_table[i].write_content = vic_cache_line_evicted.block;
                 n_mshr_entry_occupied_cnt ++; // occupy one entry
                 break;
             end
@@ -448,65 +452,66 @@ always_comb begin : manage_MSHR
     // if request is read, change is_req to true
     // if request is write, change is_req NO NEED TO CHANGE MEMORY OPERATION SINCE IT'S WRITE-BACK!!!
     if (mshr_hit) begin
-        next_mshr_table[mshr_hit_index].is_req = '1;
+        tmp_next_2_mshr_table[mshr_hit_index].is_req = '1;
     end
 
     /** allocate new MSHR entry when there are enough MSHR free entry **/
-    if ( ( (state == READY) & (next_state == WAIT) ) | ( (state == WAIT_MSHR) & (next_state == WAIT) )) begin
+    if ( ( (state == READY) & (next_state == WAIT) ) | ( (state == WAIT_MSHR) & (next_state == WAIT) ) ) begin
         for (int i=0; i<`N_PF+1;i++) begin
-            next_mshr_table[free_mshr_entry_idx[i]].valid = '1;
-            next_mshr_table[free_mshr_entry_idx[i]].is_req = (i==0)? '1:'0; // index zero is the request, the rest are prefetch
-            next_mshr_table[free_mshr_entry_idx[i]].mem_op =  MEM_READ; // for write-back, all request needs to be loaded to cache first. Therefore even though it's store we load the cache line as load operation and write the dirty cache line in place in the cache
-            next_mshr_table[free_mshr_entry_idx[i]].Dmem2proc_tag = '0;
-            next_mshr_table[free_mshr_entry_idx[i]].Dmem2proc_data = '0;
-            next_mshr_table[free_mshr_entry_idx[i]].cache_line_addr = addrs2mshr[i];
-            next_mshr_table[free_mshr_entry_idx[i]].write_content = '0;
+            tmp_next_2_mshr_table[free_mshr_entry_idx[i]].valid = '1;
+            tmp_next_2_mshr_table[free_mshr_entry_idx[i]].is_req = (i==0)? '1:'0; // index zero is the request, the rest are prefetch
+            tmp_next_2_mshr_table[free_mshr_entry_idx[i]].mem_op =  MEM_READ; // for write-back, all request needs to be loaded to cache first. Therefore even though it's store we load the cache line as load operation and write the dirty cache line in place in the cache
+            tmp_next_2_mshr_table[free_mshr_entry_idx[i]].Dmem2proc_tag = '0;
+            tmp_next_2_mshr_table[free_mshr_entry_idx[i]].Dmem2proc_data = '0;
+            tmp_next_2_mshr_table[free_mshr_entry_idx[i]].cache_line_addr = addrs2mshr[i];
+            tmp_next_2_mshr_table[free_mshr_entry_idx[i]].write_content = '0;
         end
         n_mshr_entry_occupied_cnt += (`N_PF + 1);
     end
 
     /** issue memory request (STILL NEED IT WHEN STATE IS FLUSH) **/
     // find the most proper index to issue
-    tmp_next_1_mshr_table = next_mshr_table;    // for signal renaming
+    tmp_next_3_mshr_table = tmp_next_2_mshr_table;    // for signal renaming
     mshr_index_to_issue = '0;
-    issue2mem = '1;
+    issue2mem = '0;
     for (int i=0;i<`N_MSHR;i++) begin
         // highest priority: request and write operation SINCE MSHR-WRITE ENTRY CAN BE FREED UPON MEMORY RESPONSE 
-        if (tmp_next_1_mshr_table[i].valid & tmp_next_1_mshr_table[i].Dmem2proc_tag == '0 & tmp_next_1_mshr_table[i].mem_op == MEM_WRITE) begin
-            mshr_index_to_issue = i;        
+        if (tmp_next_2_mshr_table[i].valid & (tmp_next_2_mshr_table[i].Dmem2proc_tag == '0) & (tmp_next_2_mshr_table[i].mem_op == MEM_WRITE) ) begin
+            mshr_index_to_issue = i;    
+            issue2mem = '1;    
             break;
-        end else if (tmp_next_1_mshr_table[i].valid & tmp_next_1_mshr_table[i].Dmem2proc_tag == '0 & tmp_next_1_mshr_table[i].is_req) begin
-            mshr_index_to_issue = i;        
+        end else if (tmp_next_2_mshr_table[i].valid & (tmp_next_2_mshr_table[i].Dmem2proc_tag == '0) & tmp_next_2_mshr_table[i].is_req) begin // read request next, should not be prefetch
+            mshr_index_to_issue = i; 
+            issue2mem = '1;        
             break;
-        end else if (tmp_next_1_mshr_table[i].valid & tmp_next_1_mshr_table[i].Dmem2proc_tag == '0 & ~tmp_next_1_mshr_table[i].is_req & tmp_next_1_mshr_table[i].mem_op == MEM_READ) begin
-            mshr_index_to_issue = i;        
-            break;
-        end else if (tmp_next_1_mshr_table[i].valid & tmp_next_1_mshr_table[i].Dmem2proc_tag == '0 ) begin
-            mshr_index_to_issue = i;        
+        end else if (tmp_next_2_mshr_table[i].valid & (tmp_next_2_mshr_table[i].Dmem2proc_tag == '0) ) begin // prefetch is of the lowest priority
+            mshr_index_to_issue = i;   
+            issue2mem = '1;      
             break;
         end else begin
-            issue2mem = '0;
+            $display("time: %d MSHR: nothing to issue to memory", $time);
         end
     end
     // issue request to memory if there is any 
     if (issue2mem) begin
         // form request to memory
-        proc2Dmem_command = (next_mshr_table[mshr_index_to_issue].mem_op == MEM_READ) ? BUS_LOAD : BUS_STORE;
-        proc2Dmem_addr = next_mshr_table[mshr_index_to_issue].cache_line_addr;
-        proc2Dmem_data = next_mshr_table[mshr_index_to_issue].write_content; 
+        proc2Dmem_command = (tmp_next_2_mshr_table[mshr_index_to_issue].mem_op == MEM_READ) ? BUS_LOAD : BUS_STORE;
+        proc2Dmem_addr = tmp_next_2_mshr_table[mshr_index_to_issue].cache_line_addr;
+        proc2Dmem_data = tmp_next_2_mshr_table[mshr_index_to_issue].write_content; 
         // wait response from memory
-        next_mshr_table[mshr_index_to_issue].Dmem2proc_tag = Dmem2proc_response;
+        tmp_next_3_mshr_table[mshr_index_to_issue].Dmem2proc_tag = Dmem2proc_response;
         // if it's store, upon memory response, free the entry immediately
-        if (next_mshr_table[mshr_index_to_issue].mem_op == MEM_WRITE & next_mshr_table[mshr_index_to_issue].Dmem2proc_tag != '0)begin
-             next_mshr_table[mshr_index_to_issue] = '0; 
+        if ( (tmp_next_2_mshr_table[mshr_index_to_issue].mem_op == MEM_WRITE) & (Dmem2proc_response != '0) )begin
+             tmp_next_3_mshr_table[mshr_index_to_issue] = '0; 
              n_mshr_entry_freed_cnt ++; // free one entry
         end
     end else begin
         proc2Dmem_command = BUS_NONE;
     end
 
-    /** update mshr free entry count **/
+    /** update mshr free entry count and final version of next_mshr_table**/
     next_n_mshr_avail = n_mshr_avail + n_mshr_entry_freed_cnt - n_mshr_entry_occupied_cnt;
+    next_mshr_table = tmp_next_3_mshr_table;
     
 end
 `endif
@@ -525,18 +530,18 @@ end
     logic [`N_IDX_BITS-1:0] hit_idx_expected;
     
 
-    assign hit_idx_expected = dcache_request.valid ? (`N_IDX_BITS-1)'bx :
-                                                     dcache_request.addr[`N_IDX_BITS + `DC_BO - 1:`DC_BO]; // debug this
+    assign hit_idx_expected = dcache_request.valid ? dcache_request.addr[`N_IDX_BITS + `DC_BO - 1:`DC_BO] : 
+                                                     (`N_IDX_BITS)'bx; // debug this
     
 
     always_comb begin : determine_cache_hit
-        main_cache_hit = 1'b0;
-        main_cache_line_upon_hit'0;
-        main_cache_hit_index = '0;
+        main_cache_hit              = '0;
+        main_cache_line_upon_hit    = '0;
+        main_cache_hit_index        = '0;
         if (dcache_request.valid) begin
             // check if that line has valid CL and if tag match
-            if (main_cache_lines[hit_idx_expected].valid == 1'b1 && main_cache_lines[hit_idx_expected].tag == dcache_req_CL_tag) begin
-                    main_cache_hit = 1'b1;
+            if (main_cache_lines[hit_idx_expected].valid & (main_cache_lines[hit_idx_expected].tag == dcache_req_CL_tag) ) begin
+                    main_cache_hit = '1;
                     main_cache_line_upon_hit = main_cache_lines[hit_idx_expected];
                     main_cache_hit_index = hit_idx_expected;
             end
@@ -549,15 +554,14 @@ end
 `endif
 
 /*** determine if it's victim cache hit ***/
-`ifdef DIRECT_MAPPED
-always_comb begin : dtermine_victim_cache_hit
-    vc_hit = 1'b0;
-    vc_hit_index = '0;
+always_comb begin : determine_victim_cache_hit
+    vc_hit                  = '0;
+    vc_hit_index            = '0;
     vic_cache_line_upon_hit = '0;
     if (dcache_request.valid) begin
         for (int i = 0; i < `N_VC_CL; i++) begin
-            if (victim_cache_lines[i].valid & victim_cache_lines[i].tag == dcache_request.addr[`XLEN-1:`DC_BO]) begin
-                vc_hit = 1'b1;
+            if (victim_cache_lines[i].valid & (victim_cache_lines[i].tag == dcache_request.addr[`XLEN-1:`DC_BO]) ) begin
+                vc_hit = '1;
                 vc_hit_index = i;
                 vic_cache_line_upon_hit = victim_cache_lines[i];
                 break;
@@ -566,24 +570,22 @@ always_comb begin : dtermine_victim_cache_hit
     end
     
 end
-`elsif TWO_WAY_SET_ASSOCIATIVE
-// TBD
-`endif 
+
 
 /*** determine if it's MSHR hit ***/
 
 always_comb begin : determine_MSHR_hit
-    mshr_hit = 1'b0;
-    mshr_real_hit = 1'b0;
-    mshr_hit_index = '0;
+    mshr_hit            = '0;
+    mshr_real_hit       = '0;
+    mshr_hit_index      = '0;
     if (dcache_request.valid) begin
         for (int i = 0; i < `N_MSHR; i++) begin
-            if (mshr_table[i].valid & mshr_table[i].cache_line_addr[`XLEN-1:`DC_BO] == dcache_request.addr[`XLEN-1:`DC_BO]) begin
-                mshr_hit = 1'b1;
+            if (mshr_table[i].valid & (mshr_table[i].cache_line_addr[`XLEN-1:`DC_BO] == dcache_request.addr[`XLEN-1:`DC_BO]) ) begin
+                mshr_hit = '1;
                 mshr_hit_index = i;
                 // can the request be handled on this cycle?
-                if (mshr_table[i].Dmem2proc_tag == Dmem2proc_tag | mshr_table[i].mem_op = MEM_WRITE) begin
-                     mshr_real_hit = 1'b1;
+                if ( (mshr_table[i].Dmem2proc_tag == Dmem2proc_tag) | (mshr_table[i].mem_op = MEM_WRITE) ) begin
+                     mshr_real_hit = '1;
                      mshr_hit = '0; 
                      break;
                 end

@@ -49,7 +49,7 @@ module dcache(
         output DCACHE_REQUEST  dbg_dcache_request_on_wait
 
     `endif
-)
+);
 
 /*** Registers ***/
 CACHE_LINE [`N_CL-1 : 0] main_cache_lines;

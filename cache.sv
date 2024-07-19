@@ -406,6 +406,11 @@ logic [$clog2(`N_MSHR)-1:0]  free_mshr_entry_idx [`N_PF:0];
 /** modify free_mshr_entry_idx **/
 always_comb begin : free_mshr_entry_index_determination
     int count_f = 0;
+    // initialize two dimensional array
+    for (int i=0; i<`N_PF+1;i++) begin
+        free_mshr_entry_idx[i] = '0;
+    end
+
     free_mshr_entry_idx = '0;
     for (int i=0; i<`N_MSHR;i++) begin
         if (mshr_table[i].valid == '0) begin
@@ -611,7 +616,6 @@ always_comb begin : determine_MSHR_hit
                 if ( (mshr_table[i].Dmem2proc_tag == Dmem2proc_tag) | (mshr_table[i].mem_op = MEM_WRITE) ) begin
                      mshr_real_hit = '1;
                      mshr_hit = '0; 
-                     break;
                 end
             end
         end

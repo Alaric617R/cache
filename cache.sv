@@ -555,7 +555,7 @@ end
     
 
     assign hit_idx_expected = dcache_request.valid ? dcache_request.addr[`N_IDX_BITS + `DC_BO - 1:`DC_BO] : 
-                                                     (`N_IDX_BITS)'b0; // debug this
+                                                     'x; // debug this
     
 
     always_comb begin : determine_cache_hit

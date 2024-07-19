@@ -74,7 +74,7 @@ module testbench;
     );
 
     mem mem(
-        .clock(clock),
+        .clk(clock),
 
         .proc2mem_addr(proc2Dmem_addr),
         .proc2mem_data(proc2Dmem_data),

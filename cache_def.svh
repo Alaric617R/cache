@@ -31,7 +31,7 @@ typedef enum logic [1:0] {
 // ***** dcache related ***** //
 
 // internal state of dcache
-typedef enum logic { READY, WAIT, WAIT_MSHR, FLUSH } DC_STATE_T;
+typedef enum logic [1:0] { READY, WAIT, WAIT_MSHR, FLUSH } DC_STATE_T;
 // associativity
 `define DIRECT_MAPPED
 // `define TWO_WAY_SET_ASSOCIATIVE 

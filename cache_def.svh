@@ -1,6 +1,9 @@
+
+
 `ifndef __CACHE_DEFS_SVH__
 `define __CACHE_DEFS_SVH__
 
+`include "sys_defs.svh"
 
 
 

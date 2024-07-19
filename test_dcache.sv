@@ -1,7 +1,7 @@
 `include "cache_def.svh"
 
 `define DEBUG
-
+`define CLOCK_PERIOD 10
 module testbench;
     logic clock;
     logic reset;
@@ -34,6 +34,12 @@ module testbench;
     logic [$clog2(`N_MSHR)-1 : 0] dbg_n_mshr_avail;
     DC_STATE_T dbg_state;
     DCACHE_REQUEST  dbg_dcache_request_on_wait;
+
+    // CLOCK_PERIOD is defined on the commandline by the makefile
+    always begin
+        #(`CLOCK_PERIOD/2.0);
+        clock = ~clock;
+    end
 
     dcache dut(
         .clock(clock),
@@ -97,11 +103,52 @@ module testbench;
         $display("/*** MAIN CACHE LINES ***/");
         for (int i=0; i<`N_CL;i++) begin
             $display("CACHE_LINE[%0d]:", i);
+            $display("  addr: %0b", dbg_main_cache_lines[i].addr);
             $display("  valid: %0d", dbg_main_cache_lines[i].valid);
             $display("  dirty: %0d", dbg_main_cache_lines[i].dirty);
-            $display("  tag: %0h", dbg_main_cache_lines[i].tag);
+            $display("  tag: %0b", dbg_main_cache_lines[i].tag);
             $display("  block: %0h", dbg_main_cache_lines[i].block);
         end
+    endtask
+
+    task print_VICTIM_CACHE_LINE;
+        $display("/*** VICTIM CACHE LINE ***/");
+        for (int i=0; i<`N_VC_CL;i++) begin
+            $display("VICTIM_CACHE_LINE[%0d]:", i);
+            $display("  addr: %0b", {dbg_victim_cache_lines[i].tag,3'b0});
+            $display("  tag: %0b", dbg_victim_cache_lines[i].tag);
+            $display("  valid: %0d", dbg_victim_cache_lines[i].valid);
+            $display("  dirty: %0d", dbg_victim_cache_lines[i].dirty);
+            $display("  lru: %0d", dbg_victim_cache_lines[i].lru);
+            $display("  block: %0h", dbg_victim_cache_lines[i].block);
+        end
+    endtask
+
+    task print_dcache_req_on_wait;
+        $display("/*** DCACHE REQUEST ON WAIT ***/");
+        if (~dbg_dcache_request_on_wait.valid) begin
+            $display("No request on wait");
+        end
+        $display("  mem_op: %0d", dbg_dcache_request_on_wait.mem_op);
+        $display("  addr: %0b", dbg_dcache_request_on_wait.addr);
+        $display("  size: %0d", dbg_dcache_request_on_wait.size);
+        $display("  write_content: %0h", dbg_dcache_request_on_wait.write_content);
+        $display("  valid: %0d", dbg_dcache_request_on_wait.valid);
+        $display("  pc: %0h", dbg_dcache_request_on_wait.pc);
+    endtask
+
+    task print_this_cycle_state;
+        $display("/*** THIS CYCLE STATE ***/");
+        case(dbg_state)
+            READY: $display("STATE: READY");
+            WAIT: $display("STATE: WAIT");
+            WAIT_MSHR : $display("STATE: WAIT_MSHR");
+            FLUSH: $display("STATE: FLUSH");
+        endcase
+        $display("STATE: %0d", dbg_state);
+        print_MAIN_CACHE_LINES;
+        print_VICTIM_CACHE_LINE;
+        print_MSHR_TABLE;
     endtask
 
     // signal generation function
@@ -126,21 +173,30 @@ module testbench;
         return req;
     endfunction
 
+ initial begin
+        $display("/************* Start Testing! *************/");
+        reset = 1;
+        clock = 0;
+        dcache_request = '0;
 
-
-
-    $display("/*** DCACHE INFO ***/\n");
-    $display("CACHE SIZE: %d\n", `DCACHE_SIZE);
-    $display("CACHE BLOCK SIZE: %d\n", `DC_BLK_SZ);
-    $display("N_IDX_BITS: %d\n", `N_IDX_BITS);
-    `ifdef DIRECT_MAPPED
-        $display("ASSOCIATIVITY: DIRECT MAPPED");
-    `elsif TWO_WAY_SET_ASSOCIATIVE 
-        $display("ASSOCIATIVITY: TWO WAY SET ASSOCIATIVE");
-    `else
-        $display("ASSOCIATIVITY: NOT DEFINED! ABORT!");
+        $display("/*** DCACHE INFO ***/\n");
+        $display("CACHE SIZE: %d\n", `DCACHE_SIZE);
+        $display("CACHE BLOCK SIZE: %d\n", `DC_BLK_SZ);
+        $display("N_IDX_BITS: %d\n", `N_IDX_BITS);
+        `ifdef DIRECT_MAPPED
+            $display("ASSOCIATIVITY: DIRECT MAPPED");
+        `elsif TWO_WAY_SET_ASSOCIATIVE 
+            $display("ASSOCIATIVITY: TWO WAY SET ASSOCIATIVE");
+        `else
+            $display("ASSOCIATIVITY: NOT DEFINED! ABORT!");
+            $finish;
+        `endif 
+        
         $finish;
-    `endif 
+ end
+
+
+
 
 
 endmodule

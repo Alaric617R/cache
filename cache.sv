@@ -397,7 +397,7 @@ always_comb begin : gen_new_mshr_entry
     addrs2mshr = '0;
     base_addr  = (state == READY) ? dcache_request.addr : dcache_request_on_wait.addr;
     for (int i=0; i<`N_PF+1;i++) begin
-        addrs2mshr[i] = base_addr + i*(`DC_BLK_SZ)*8
+        addrs2mshr[i] = base_addr + i*(`DC_BLK_SZ)*8;
     end
 end
 

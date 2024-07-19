@@ -157,7 +157,7 @@ module testbench;
     // signal generation function
     function DCACHE_REQUEST gen_dcache_read_request(MEM_ADDR_T addr, MEM_SIZE size, PC_T pc);
         DCACHE_REQUEST req = '0;
-        req.mem_op = READ;
+        req.mem_op = MEM_READ;
         req.addr = addr;
         req.size = size;
         req.valid = 1;
@@ -167,7 +167,7 @@ module testbench;
 
     function DCACHE_REQUEST gen_dcache_write_request(MEM_ADDR_T addr, MEM_SIZE size, REG_DATA_T write_content, PC_T pc);
         DCACHE_REQUEST req = '0;
-        req.mem_op = READ;
+        req.mem_op = MEM_WRITE;
         req.addr = addr;
         req.size = size;
         req.write_content = write_content;

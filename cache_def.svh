@@ -85,11 +85,6 @@ typedef struct packed {
     logic valid;
 } DCACHE_RESPONSE;
 
-typedef union packed {
-  logic [7:0][7:0]  byte_level;
-  logic [3:0][15:0] half_level;
-  logic [1:0][31:0] word_level;
-} EXAMPLE_CACHE_BLOCK;
 
 typedef struct packed {
     logic valid;

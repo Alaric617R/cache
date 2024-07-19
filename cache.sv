@@ -426,12 +426,12 @@ MSHR_ENTRY [`N_MSHR - 1 : 0] tmp_next_3_mshr_table;
 
 `ifdef DIRECT_MAPPED
 always_comb begin : manage_MSHR
-
+    int  n_mshr_entry_freed_cnt = 0;
+    int  n_mshr_entry_occupied_cnt = 0;
     tmp_next_1_mshr_table = mshr_table;
     next_n_mshr_avail = n_mshr_avail;
     // counter for number of MSHR entry change
-    integer  n_mshr_entry_freed_cnt = 0;
-    integer n_mshr_entry_occupied_cnt = 0;
+
     
     /** flush MSHR when done, invalidate all LOAD operations **/
     if (state == FLUSH) begin

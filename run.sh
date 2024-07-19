@@ -4,4 +4,4 @@ if [ ! -z "$1" ]; then
     module load vcs;
 fi
 
-make;
+make simv;

@@ -463,7 +463,7 @@ always_comb begin : manage_MSHR
                 tmp_next_2_mshr_table[i].is_req = '1;
                 tmp_next_2_mshr_table[i].mem_op = MEM_WRITE;
                 tmp_next_2_mshr_table[i].Dmem2proc_tag = '0;
-                tmp_next_2_mshr_table[i].Dmem2proc_data = vic_cache_line_evicted.block
+                tmp_next_2_mshr_table[i].Dmem2proc_data = vic_cache_line_evicted.block;
                 tmp_next_2_mshr_table[i].cache_line_addr = {vic_cache_line_evicted.tag, 3'b0};    // since it is fully associative cache, no index bits
                 tmp_next_2_mshr_table[i].write_content = vic_cache_line_evicted.block;
                 n_mshr_entry_occupied_cnt ++; // occupy one entry

@@ -1,4 +1,5 @@
 `include "cache_def.svh"
+`include "sys_defs.svh"
 
 // WRITE-BACK policy for this design
 // for write-back cache, only eviction will issue write operation!!!

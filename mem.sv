@@ -12,6 +12,8 @@
 `ifndef __MEM_V__
 `define __MEM_V__
 
+`define CACHE_MODE
+
 `timescale 1ns/100ps
 
 module mem (

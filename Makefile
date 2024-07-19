@@ -160,7 +160,7 @@ GREP = grep -E --color=auto
 # - with dependencies: 'rob.simv', 'rob.cov', and 'synth/rob.vg'
 
 # TODO: add more modules here
-TESTED_MODULES = pipeline inst_buffer fetch
+TESTED_MODULES = cache
 
 # TODO: add verilog module dependencies here:
 # (do not include header files)
@@ -319,6 +319,7 @@ $(TESTED_MODULES:=.cov.verdi): %.cov.verdi: %.cov.vdb
 # This is done automatically with 'make <my_program>.out'
 
 HEADERS = cache_def.svh \
+		  sys_defs.svh
 
 
 TESTBENCH = test_dcache.sv \

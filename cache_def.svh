@@ -2,8 +2,7 @@
 `define __CACHE_DEFS_SVH__
 
 
-// data length
-`define XLEN 32
+
 
 // data to pipeline registers
 typedef logic [`XLEN-1:0] REG_DATA_T;
@@ -17,12 +16,7 @@ typedef enum logic { MEM_READ, MEM_WRITE } MEM_OP_T;
 // memory address
 typedef logic [`XLEN-1:0] MEM_ADDR_T;
 
-// Memory bus commands
-typedef enum logic [1:0] {
-  BUS_NONE  = 2'h0,
-  BUS_LOAD  = 2'h1,
-  BUS_STORE = 2'h2
-} BUS_COMMAND;
+
 
 // granularity of memory access
 typedef enum logic [1:0] {

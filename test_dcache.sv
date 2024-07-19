@@ -1,4 +1,5 @@
 `include "cache_def.svh"
+`include "sys_defs.svh"
 `include "mem.sv"
 
 

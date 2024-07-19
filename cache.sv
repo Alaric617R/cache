@@ -39,14 +39,13 @@ module dcache(
     output logic flush_finished
 
     `ifdef DEBUG,   
-        input PC_T pc,
-        CACHE_LINE [`N_CL-1 : 0] dbg_main_cache_lines,
-        VICTIM_CACHE_LINE [`N_VC_CL-1 : 0] dbg_victim_cache_lines,
-        logic [$clog2(`N_VC_CL)-1 : 0] dbg_n_vc_avail,
-        MSHR_ENTRY [`N_MSHR-1 : 0] dbg_mshr_table,
-        logic [$clog2(`N_MSHR)-1 : 0] dbg_n_mshr_avail,
-        DC_STATE_T dbg_state,
-        DCACHE_REQUEST  dbg_dcache_request_on_wait
+        output CACHE_LINE [`N_CL-1 : 0] dbg_main_cache_lines,
+        output VICTIM_CACHE_LINE [`N_VC_CL-1 : 0] dbg_victim_cache_lines,
+        output logic [$clog2(`N_VC_CL)-1 : 0] dbg_n_vc_avail,
+        output MSHR_ENTRY [`N_MSHR-1 : 0] dbg_mshr_table,
+        output logic [$clog2(`N_MSHR)-1 : 0] dbg_n_mshr_avail,
+        output DC_STATE_T dbg_state,
+        output DCACHE_REQUEST  dbg_dcache_request_on_wait
 
     `endif
 )
@@ -152,8 +151,9 @@ end
 /*** manage main cache ***/
 
 /** for memory response from MSHR, determine the cache line to go to in main cache **/
-logic [$clog2(`N_CL)-1:0] cache_line_index_for_new_data;
+logic [$clog2(`N_CL)-1:0] cache_line_index_for_new_data; // can be missed request or PREFETCH!!!
 logic need_to_evict; // can the newly loaded cache line be accommodate to main cache without eviction?
+logic mshr2dcache_packet_USED;
 `ifdef DIRECT_MAPPED
     assign cache_line_index_for_new_data = mshr2dcache_packet.cache_line_addr[`N_IDX_BITS + `DC_BO - 1:`DC_BO];
     assign need_to_evict = main_cache_lines[cache_line_index_for_new_data].valid;
@@ -164,7 +164,7 @@ logic need_to_evict; // can the newly loaded cache line be accommodate to main c
 
 /** for MSHR real hit: 1. current memory response match with current request 2. current request(read/write) match with MSHR entry with MEM_WRITE **/
 logic [$clog2(`N_CL)-1:0] cache_line_index_for_MSHR_real_hit;
-logic need_to_evict_MSHR_real_hit; // can the newly loaded cache line be accommodate to main cache without eviction?
+logic need_to_evict_MSHR_real_hit; 
 `ifdef DIRECT_MAPPED
     assign cache_line_index_for_MSHR_real_hit = mshr_table[mshr_hit_index].cache_line_addr[`N_IDX_BITS + `DC_BO - 1:`DC_BO];
     assign need_to_evict_MSHR_real_hit = main_cache_lines[cache_line_index_for_MSHR_real_hit].valid;
@@ -176,6 +176,7 @@ logic need_to_evict_MSHR_real_hit; // can the newly loaded cache line be accommo
 `ifdef DIRECT_MAPPED
 always_comb begin : manage_main_cache
     next_main_cache_lines = main_cache_lines;
+    mshr2dcache_packet_USED = '0;
     // cache hit (NO NEED TO ALLOCATE NEW CACHE LINE!) (mshr real hit dealt in another case)
     if (state == READY & main_cache_hit) begin
         if (dcache_request.mem_op == MEM_READ) begin // FOR LOAD
@@ -195,12 +196,15 @@ always_comb begin : manage_main_cache
                 WORD: next_main_cache_lines[main_cache_hit_index].block.word_level[dcache_request.addr[2:2]] = dcache_request.write_content[31:0];
             endcase
         end
-    end else if (state == READY & mshr_real_hit & ~main_cache_hit & ~vc_hit & mshr_table[mshr_hit_index].mem_op == MEM_WRITE) begin /** Date forwarded from MSHR table **/
+    end else if (state == READY & mshr_real_hit & ~main_cache_hit & ~vc_hit & mshr_table[mshr_hit_index].mem_op == MEM_WRITE) begin /** Data forwarded from MSHR table **/
                 // special case: dirty cache line in MSHR is hit by load/store
                 next_main_cache_lines[cache_line_index_for_MSHR_real_hit].valid = '1;
                 next_main_cache_lines[cache_line_index_for_MSHR_real_hit].block = mshr_table[mshr_hit_index].write_content;
                 next_main_cache_lines[cache_line_index_for_MSHR_real_hit].dirty = '0;
                 next_main_cache_lines[cache_line_index_for_MSHR_real_hit].tag   = mshr_table[mshr_hit_index].cache_line_addr[`XLEN-1:`XLEN-`DC_TAG_LEN];
+                `ifdef DEBUG 
+                next_main_cache_lines[cache_line_index_for_MSHR_real_hit].addr  = mshr_table[mshr_hit_index].cache_line_addr;
+                `endif 
                 if (need_to_evict_MSHR_real_hit) begin
                     // transmit evicted cache line to victim cache
                     main_cache_line_evicted = main_cache_lines[cache_line_index_for_MSHR_real_hit];
@@ -214,13 +218,15 @@ always_comb begin : manage_main_cache
                         WORD:  next_main_cache_lines[cache_line_index_for_MSHR_real_hit].block.word_level[dcache_request.addr[2:2]] = dcache_request.write_content[31:0];
                     endcase
                 end
-
-    end else if (mshr2dcache_packet.valid & mshr2dcache_packet.mem_op == MEM_READ) begin /** Date forwarded from MSHR-memory response packet **/
-        if (~need_to_evict | (need_to_evict & ( mshr2dcache_packet.is_req | mshr_real_hit)) ) begin
+    end else if (state == READY & mshr_real_hit & ~main_cache_hit & ~vc_hit & mshr_table[mshr_hit_index].mem_op == MEM_READ) begin /** Data forwarded from MSHR broadcast packet **/
+            mshr2dcache_packet_USED = '1; // !used for simplifying the code
             next_main_cache_lines[cache_line_index_for_new_data].valid = '1;
             next_main_cache_lines[cache_line_index_for_new_data].block = mshr2dcache_packet.Dmem2proc_data;
             next_main_cache_lines[cache_line_index_for_new_data].dirty = '0;
             next_main_cache_lines[cache_line_index_for_new_data].tag   = mshr2dcache_packet.cache_line_addr[`XLEN-1:`XLEN-`DC_TAG_LEN];
+            `ifdef DEBUG 
+                next_main_cache_lines[cache_line_index_for_MSHR_real_hit].addr  = mshr2dcache_packet.cache_line_addr;
+            `endif 
             if (dcache_request.mem_op == MEM_WRITE) begin
                 next_main_cache_lines[cache_line_index_for_new_data].dirty = '1;
                 case(dcache_request.size)
@@ -229,6 +235,23 @@ always_comb begin : manage_main_cache
                     WORD:  next_main_cache_lines[cache_line_index_for_new_data].block.word_level[dcache_request.addr[2:2]] = dcache_request.write_content[31:0];
                 endcase
             end
+            if (need_to_evict) begin
+                // transmit evicted cache line to victim cache
+                main_cache_line_evicted = main_cache_lines[cache_line_index_for_new_data];
+                main_cache_line_evicted_addr = {main_cache_lines[cache_line_index_for_new_data].tag, cache_line_index_for_new_data, 3'b0};
+            end
+    end
+    
+    // cache miss, response from MSHR
+    if (~mshr2dcache_packet_USED & mshr2dcache_packet.valid & mshr2dcache_packet.mem_op == MEM_READ) begin /** Date forwarded from MSHR-memory response packet **/
+        if (~need_to_evict | (need_to_evict & mshr2dcache_packet.is_req) ) begin
+            next_main_cache_lines[cache_line_index_for_new_data].valid = '1;
+            next_main_cache_lines[cache_line_index_for_new_data].block = mshr2dcache_packet.Dmem2proc_data;
+            next_main_cache_lines[cache_line_index_for_new_data].dirty = '0;
+            next_main_cache_lines[cache_line_index_for_new_data].tag   = mshr2dcache_packet.cache_line_addr[`XLEN-1:`XLEN-`DC_TAG_LEN];
+            `ifdef DEBUG 
+                next_main_cache_lines[cache_line_index_for_MSHR_real_hit].addr  = mshr2dcache_packet.cache_line_addr;
+            `endif 
         end
         if (need_to_evict) begin
             // transmit evicted cache line to victim cache

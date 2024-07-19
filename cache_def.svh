@@ -43,7 +43,7 @@ typedef enum logic { READY, WAIT, WAIT_MSHR, FLUSH } DC_STATE_T;
 `define DCACHE_SIZE 256
 
 // victim cache size in Byte
-`define VICTIM_CACHE_SIZE 16
+`define VICTIM_CACHE_SIZE 64
 
 
 // cache block size in Byte
@@ -99,6 +99,9 @@ typedef struct packed {
     EXAMPLE_CACHE_BLOCK block;
     logic dirty;
     logic [`DC_TAG_LEN-1:0] tag;
+    `ifdef DEBUG
+      MEM_ADDR_T addr;
+    `endif
 } CACHE_LINE;
 
 typedef struct packed {
@@ -113,13 +116,13 @@ typedef struct packed {
 `define N_PF 1
 
 // number of MSHR registers
-`define N_MSHR 16
+`define N_MSHR 8
 
 // MSHR entry
 typedef struct packed {
   logic valid;
   logic is_req;  // 1 if it's request by pipeline; 0 means prefetch
-  MEM_OP_T mem_op; // read or write
+  MEM_OP_T mem_op; // read(0) or write(1)
   logic [3:0] Dmem2proc_tag; // zero means no tag, also means not issued to memory yet.
   REG_DATA_T Dmem2proc_data; // data from memory
   MEM_ADDR_T cache_line_addr;

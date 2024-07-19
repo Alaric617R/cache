@@ -1,4 +1,6 @@
 `include "cache_def.svh"
+`include "mem.sv"
+
 
 `define DEBUG
 `define CLOCK_PERIOD 10

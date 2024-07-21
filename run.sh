@@ -7,4 +7,4 @@ else
 fi
 
 make simv;
-./simv
+./simv;

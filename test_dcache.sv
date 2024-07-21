@@ -214,20 +214,20 @@ module testbench;
         print_this_cycle_state;
 
         @(posedge clock)  #1;
-        dcache_request = gen_dcache_read_request(32'h1000, MEM_BYTE, 1);
+        dcache_request = gen_dcache_read_request(32'h1000, BYTE, 1);
 
         @(posedge clock)  #1;
-        print_dcache_req_on_wait;
+        print_this_cycle_state;
 
         @(posedge clock)  #1;
-        print_dcache_req_on_wait;
+        print_this_cycle_state;
 
         @(posedge clock)  #1;
-        print_dcache_req_on_wait;
+        print_this_cycle_state;
 
         
         @(posedge clock)  #1;
-        print_dcache_req_on_wait;
+        print_this_cycle_state;
 
 
         

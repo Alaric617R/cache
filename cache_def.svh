@@ -59,10 +59,10 @@ typedef enum logic [1:0] { READY, WAIT, WAIT_MSHR, FLUSH } DC_STATE_T;
 
 `ifdef DIRECT_MAPPED
   // number of index bit for directed mapped
-  `define N_IDX_BITS ( $clog2(`DCACHE_SIZE/`DC_BLK_SZ) - $clog2(`DC_BLK_SZ) )
+  `define N_IDX_BITS ( $clog2(`DCACHE_SIZE/`DC_BLK_SZ)  )
 `elsif TWO_WAY_SET_ASSOCIATIVE
   // number of index bit for TWSA
-  `define N_IDX_BITS ( $clog2(`DCACHE_SIZE/`DC_BLK_SZ) - $clog2(`DC_BLK_SZ) - 1 )
+  `define N_IDX_BITS ( $clog2(`DCACHE_SIZE/`DC_BLK_SZ) - 1 )
 `else 
   `define N_IDX_BITS 100
 `endif 

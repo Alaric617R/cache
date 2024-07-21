@@ -390,20 +390,47 @@ end
 
 // new MSHR entry for request and prefetch cache line
 // NOTE: prefetch for both LOAD and STORE !!!
-MEM_ADDR_T [`N_PF:0] addrs2mshr;
+// PREVENT CACHE LINE WAITING TO BE WRITTEN BACK BE LOADED FROM MEMORY AGAIN, which will not be the most updated version of that CL
+function addr_not_in_main_cache(MEM_ADDR_T addr);
+`ifdef DIRECT_MAPPED
+    if (main_cache_lines[addr[`N_IDX_BITS + `DC_BO - 1:`DC_BO]].valid & (main_cache_lines[addr[`N_IDX_BITS + `DC_BO - 1:`DC_BO]].tag == addr[`XLEN-1:`XLEN-`DC_TAG_LEN]) ) return 0;
+    else return 1;
+`elsif macro TWO_WAY_SET_ASSOCIATIVE
+    // TBD
+`endif 
+endfunction
+
+function addr_not_in_victim_cache(MEM_ADDR_T addr);
+    for (int i=0; i<`N_VC_CL; i++) begin
+        if (victim_cache_lines[i].valid & (victim_cache_lines[i].tag == addr[`XLEN-1:`DC_BO]) ) return 0;
+    end
+    return 1;
+endfunction
+
+function  addr_not_in_MSHR_packet(MEM_ADDR_T addr);
+    if (mshr2dcache_packet.cache_line_addr == addr) return 0;
+    else return 1;
+endfunction
+PREFETCH_ADDR_T [`N_PF:0] addrs2mshr;
 MEM_ADDR_T base_addr; // address of the memory request
 /** modify addrs2mshr **/
 always_comb begin : gen_new_mshr_entry
     addrs2mshr = '0;
     base_addr  = (state == READY) ? dcache_request.addr : dcache_request_on_wait.addr;
     for (int i=0; i<`N_PF+1;i++) begin
-        addrs2mshr[i] = base_addr + i*(`DC_BLK_SZ)*8;
+        addrs2mshr[i].addr = base_addr + i*(`DC_BLK_SZ)*8;
+        addrs2mshr[i].valid = addr_not_in_main_cache(base_addr + i*(`DC_BLK_SZ)*8)   & 
+                              addr_not_in_victim_cache(base_addr + i*(`DC_BLK_SZ)*8) & 
+                              addr_not_in_MSHR_packet(base_addr + i*(`DC_BLK_SZ)*8);
+
     end
 end
 
 // MSHR entries that are not occupied
 logic [$clog2(`N_MSHR)-1:0]  free_mshr_entry_idx [`N_PF:0];
+
 /** modify free_mshr_entry_idx **/
+
 always_comb begin : free_mshr_entry_index_determination
     int count_f = 0;
     // initialize two dimensional array
@@ -411,7 +438,6 @@ always_comb begin : free_mshr_entry_index_determination
         free_mshr_entry_idx[i] = '0;
     end
 
-    free_mshr_entry_idx = '0;
     for (int i=0; i<`N_MSHR;i++) begin
         if (mshr_table[i].valid == '0) begin
             free_mshr_entry_idx[count_f] = i;
@@ -487,12 +513,12 @@ always_comb begin : manage_MSHR
     /** allocate new MSHR entry when there are enough MSHR free entry **/
     if ( ( (state == READY) & (next_state == WAIT) ) | ( (state == WAIT_MSHR) & (next_state == WAIT) ) ) begin
         for (int i=0; i<`N_PF+1;i++) begin
-            tmp_next_2_mshr_table[free_mshr_entry_idx[i]].valid = '1;
+            tmp_next_2_mshr_table[free_mshr_entry_idx[i]].valid = addrs2mshr[i].valid;
             tmp_next_2_mshr_table[free_mshr_entry_idx[i]].is_req = (i==0)? '1:'0; // index zero is the request, the rest are prefetch
             tmp_next_2_mshr_table[free_mshr_entry_idx[i]].mem_op =  MEM_READ; // for write-back, all request needs to be loaded to cache first. Therefore even though it's store we load the cache line as load operation and write the dirty cache line in place in the cache
             tmp_next_2_mshr_table[free_mshr_entry_idx[i]].Dmem2proc_tag = '0;
             tmp_next_2_mshr_table[free_mshr_entry_idx[i]].Dmem2proc_data = '0;
-            tmp_next_2_mshr_table[free_mshr_entry_idx[i]].cache_line_addr = addrs2mshr[i];
+            tmp_next_2_mshr_table[free_mshr_entry_idx[i]].cache_line_addr = addrs2mshr[i].addr;
             tmp_next_2_mshr_table[free_mshr_entry_idx[i]].write_content = '0;
         end
         n_mshr_entry_occupied_cnt += (`N_PF + 1);
@@ -608,17 +634,23 @@ always_comb begin : determine_MSHR_hit
     mshr_real_hit       = '0;
     mshr_hit_index      = '0;
     if (dcache_request.valid) begin
+        // can the request be handled on this cycle?
         for (int i = 0; i < `N_MSHR; i++) begin
             if (mshr_table[i].valid & (mshr_table[i].cache_line_addr[`XLEN-1:`DC_BO] == dcache_request.addr[`XLEN-1:`DC_BO]) ) begin
                 mshr_hit = '1;
                 mshr_hit_index = i;
-                // can the request be handled on this cycle?
-                if ( (mshr_table[i].Dmem2proc_tag == Dmem2proc_tag) | (mshr_table[i].mem_op = MEM_WRITE) ) begin
-                     mshr_real_hit = '1;
-                     mshr_hit = '0; 
-                end
             end
         end
+
+        for (int i = 0; i < `N_MSHR; i++) begin
+            if (mshr_table[i].valid & (mshr_table[i].cache_line_addr[`XLEN-1:`DC_BO] == dcache_request.addr[`XLEN-1:`DC_BO]) & ( (mshr_table[i].Dmem2proc_tag == Dmem2proc_tag) | (mshr_table[i].mem_op = MEM_WRITE) ) ) begin
+                mshr_real_hit = '1;
+                mshr_hit_index = i;
+            end
+        end
+
+        if (mshr_real_hit) mshr_hit = '0;
+
     end
     
 end

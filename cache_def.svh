@@ -107,6 +107,11 @@ typedef struct packed {
 // number of CLs to prefetch
 `define N_PF 1
 
+typedef struct packed {
+    logic valid;
+    MEM_ADDR_T addr;
+} PREFETCH_ADDR_T
+
 // number of MSHR registers
 `define N_MSHR 8
 

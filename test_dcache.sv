@@ -195,7 +195,7 @@ module testbench;
         reset = 1;
         clock = 0;
         dcache_request = '0;
-
+        $display("CLOCK: %d\n", `CLOCK_PERIOD);
         $display("/*** DCACHE INFO ***/\n");
         $display("CACHE SIZE: %dB\n", `DCACHE_SIZE);
         $display("CACHE BLOCK SIZE: %dB\n", `DC_BLK_SZ);

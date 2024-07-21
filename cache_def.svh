@@ -110,7 +110,7 @@ typedef struct packed {
 typedef struct packed {
     logic valid;
     MEM_ADDR_T addr;
-} PREFETCH_ADDR_T
+} PREFETCH_ADDR_T;
 
 // number of MSHR registers
 `define N_MSHR 8

@@ -177,7 +177,7 @@ module testbench;
     endfunction
 
  initial begin
-        $display("/************* Start Testing! *************/");
+        $write("/************* Start Testing! *************/");
         reset = 1;
         clock = 0;
         dcache_request = '0;

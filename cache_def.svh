@@ -37,10 +37,10 @@ typedef enum logic [1:0] { READY, WAIT, WAIT_MSHR, FLUSH } DC_STATE_T;
 // `define TWO_WAY_SET_ASSOCIATIVE 
 
 // cache size in Byte
-`define DCACHE_SIZE 256
+`define DCACHE_SIZE 32
 
 // victim cache size in Byte
-`define VICTIM_CACHE_SIZE 64
+`define VICTIM_CACHE_SIZE 16
 
 
 // cache block size in Byte

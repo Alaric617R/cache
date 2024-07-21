@@ -543,9 +543,7 @@ always_comb begin : manage_MSHR
             mshr_index_to_issue = i;   
             issue2mem = '1;      
             break;
-        end else begin
-            $display("time: %d MSHR: nothing to issue to memory", $time);
-        end
+        end 
     end
     // issue request to memory if there is any 
     if (issue2mem) begin
@@ -562,6 +560,8 @@ always_comb begin : manage_MSHR
         end
     end else begin
         proc2Dmem_command = BUS_NONE;
+        $display("time: %d MSHR: nothing to issue to memory", $time);
+
     end
 
     /** update mshr free entry count and final version of next_mshr_table**/

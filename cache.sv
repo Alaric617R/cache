@@ -643,7 +643,7 @@ always_comb begin : determine_MSHR_hit
         end
 
         for (int i = 0; i < `N_MSHR; i++) begin
-            if (mshr_table[i].valid & (mshr_table[i].cache_line_addr[`XLEN-1:`DC_BO] == dcache_request.addr[`XLEN-1:`DC_BO]) & ( (mshr_table[i].Dmem2proc_tag == Dmem2proc_tag) | (mshr_table[i].mem_op = MEM_WRITE) ) ) begin
+            if (mshr_table[i].valid & (mshr_table[i].cache_line_addr[`XLEN-1:`DC_BO] == dcache_request.addr[`XLEN-1:`DC_BO]) & ( (mshr_table[i].Dmem2proc_tag == Dmem2proc_tag) | (mshr_table[i].mem_op == MEM_WRITE) ) ) begin
                 mshr_real_hit = '1;
                 mshr_hit_index = i;
             end

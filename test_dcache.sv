@@ -144,8 +144,8 @@ module testbench;
         $write("  write_content: %0h", dbg_dcache_request_on_wait.write_content);
         $write("  valid: %0d", dbg_dcache_request_on_wait.valid);
         $write("  pc: %0h", dbg_dcache_request_on_wait.pc);
-        $write("\n")
-        $write("\n")
+        $write("\n");
+        $write("\n");
     endtask
 
     task print_stall_out;

@@ -32,9 +32,9 @@ module testbench;
 
     CACHE_LINE [`N_CL-1 : 0] dbg_main_cache_lines;
     VICTIM_CACHE_LINE [`N_VC_CL-1 : 0] dbg_victim_cache_lines;
-    logic [$clog2(`N_VC_CL)-1 : 0] dbg_n_vc_avail;
+    logic [$clog2(`N_VC_CL) : 0] dbg_n_vc_avail;
     MSHR_ENTRY [`N_MSHR-1 : 0] dbg_mshr_table;
-    logic [$clog2(`N_MSHR)-1 : 0] dbg_n_mshr_avail;
+    logic [$clog2(`N_MSHR) : 0] dbg_n_mshr_avail;
     DC_STATE_T dbg_state;
     DCACHE_REQUEST  dbg_dcache_request_on_wait;
     logic [$clog2(`N_MSHR):0] dbg_n_mshr_entry_freed_cnt;
@@ -155,8 +155,8 @@ module testbench;
 
     task print_regs;
         $display("STALL_OUT: %0d", stall_out);
-        $display("N_MSHR_AVAIL: %0d", dbg_n_mshr_avail);
-        $display("N_VC_AVAIL: %0d", dbg_n_vc_avail);
+        $display("N_MSHR_AVAIL: %d, bit: %b", dbg_n_mshr_avail, dbg_n_mshr_avail);
+        $display("N_VC_AVAIL: %d, bit: %b", dbg_n_vc_avail, dbg_n_vc_avail);
     endtask
 
     task print_mem_bus;

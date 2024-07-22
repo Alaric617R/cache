@@ -42,9 +42,9 @@ module dcache(
     `ifdef DEBUG,   
         output CACHE_LINE [`N_CL-1 : 0] dbg_main_cache_lines,
         output VICTIM_CACHE_LINE [`N_VC_CL-1 : 0] dbg_victim_cache_lines,
-        output logic [$clog2(`N_VC_CL)-1 : 0] dbg_n_vc_avail,
+        output logic [$clog2(`N_VC_CL) : 0] dbg_n_vc_avail,
         output MSHR_ENTRY [`N_MSHR-1 : 0] dbg_mshr_table,
-        output logic [$clog2(`N_MSHR)-1 : 0] dbg_n_mshr_avail,
+        output logic [$clog2(`N_MSHR) : 0] dbg_n_mshr_avail,
         output DC_STATE_T dbg_state,
         output DCACHE_REQUEST  dbg_dcache_request_on_wait,
         output logic [$clog2(`N_MSHR):0] dbg_n_mshr_entry_freed_cnt,
@@ -56,9 +56,9 @@ module dcache(
 /*** Registers ***/
 CACHE_LINE [`N_CL-1 : 0] main_cache_lines;
 VICTIM_CACHE_LINE [`N_VC_CL-1 : 0] victim_cache_lines;
-logic [$clog2(`N_VC_CL)-1 : 0] n_vc_avail;
+logic [$clog2(`N_VC_CL) : 0] n_vc_avail;
 MSHR_ENTRY [`N_MSHR-1 : 0] mshr_table;
-logic [$clog2(`N_MSHR)-1 : 0] n_mshr_avail;
+logic [$clog2(`N_MSHR) : 0] n_mshr_avail;
 DC_STATE_T state; // for dcache
 DCACHE_REQUEST  dcache_request_on_wait;
 

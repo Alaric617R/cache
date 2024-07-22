@@ -230,11 +230,14 @@ module testbench;
         reset = 1;
         clock = 0;
         dcache_request = '0;
-        $display("CLOCK: %d\n", `CLOCK_PERIOD);
-        $display("/*** DCACHE INFO ***/\n");
-        $display("CACHE SIZE: %dB\n", `DCACHE_SIZE);
-        $display("CACHE BLOCK SIZE: %dB\n", `DC_BLK_SZ);
-        $display("N_IDX_BITS: %d\n", `N_IDX_BITS);
+        $display("CLOCK: %d", `CLOCK_PERIOD);
+        $display("/*** DCACHE INFO ***/");
+        $display("CACHE SIZE: %dB", `DCACHE_SIZE);
+        $display("CACHE BLOCK SIZE: %dB", `DC_BLK_SZ);
+        $display("N_IDX_BITS: %d", `N_IDX_BITS);
+        $display("NUMBER OF MAIN CACHE LINES: %d", `N_CL);
+        $display("NUMBER OF VICTIM CACHE LINES: %d", `N_VC_CL);
+        $display("NUMBER OF MSHR REGISTERS: %d", `N_MSHR);
         `ifdef DIRECT_MAPPED
             $display("ASSOCIATIVITY: DIRECT MAPPED");
         `elsif TWO_WAY_SET_ASSOCIATIVE 

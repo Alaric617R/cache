@@ -66,9 +66,9 @@ DCACHE_REQUEST  dcache_request_on_wait;
 DCACHE_RESPONSE next_dcache_response;
 CACHE_LINE [`N_CL-1 : 0] next_main_cache_lines;
 VICTIM_CACHE_LINE [`N_VC_CL-1 : 0] next_victim_cache_lines;
-logic [$clog2(`N_VC_CL)-1 : 0] next_n_vc_avail;
-MSHR_ENTRY [`N_MSHR - 1 : 0] next_mshr_table;
-logic [$clog2(`N_MSHR)-1 : 0] next_n_mshr_avail;
+logic [$clog2(`N_VC_CL) : 0] next_n_vc_avail;
+MSHR_ENTRY [`N_MSHR-1 : 0] next_mshr_table;
+logic [$clog2(`N_MSHR) : 0] next_n_mshr_avail;
 DC_STATE_T next_state;
 DCACHE_REQUEST  next_dcache_request_on_wait;
 
@@ -77,12 +77,12 @@ DCACHE_REQUEST  next_dcache_request_on_wait;
 /*** Combinationals ***/
 logic cache_hit; // general meaning of cache hit
 logic main_cache_hit; // main cache hit 
-logic [`N_IDX_BITS-1:0] main_cache_hit_index;
+logic [`N_IDX_BITS:0] main_cache_hit_index;
 logic vc_hit; // victim cache hit
-logic [$clog2(`N_VC_CL)-1 : 0] vc_hit_index; 
+logic [$clog2(`N_VC_CL) : 0] vc_hit_index; 
 logic mshr_hit;  // mutual exclusive against mshr_real_hit
 logic mshr_real_hit; // 1. memory response coming up from this cycle and match with current request 2. MSHR Reg is dirty CL that is requested by read/write
-logic [$clog2(`N_MSHR)-1 : 0]  mshr_hit_index;  
+logic [$clog2(`N_MSHR): 0]  mshr_hit_index;  
 logic request_finished; // request from pipeline is finished on this cycle
 
 // flush control signals
@@ -154,7 +154,7 @@ end
 /*** manage main cache ***/
 
 /** for memory response from MSHR, determine the cache line to go to in main cache **/
-logic [$clog2(`N_CL)-1:0] cache_line_index_for_new_data; // can be missed request or PREFETCH!!!
+logic [$clog2(`N_CL):0] cache_line_index_for_new_data; // can be missed request or PREFETCH!!!
 logic need_to_evict; // can the newly loaded cache line be accommodate to main cache without eviction?
 logic mshr2dcache_packet_USED;
 `ifdef DIRECT_MAPPED
@@ -166,7 +166,7 @@ logic mshr2dcache_packet_USED;
 `endif 
 
 /** for MSHR real hit: 1. current memory response match with current request 2. current request(read/write) match with MSHR entry with MEM_WRITE **/
-logic [$clog2(`N_CL)-1:0] cache_line_index_for_MSHR_real_hit;
+logic [$clog2(`N_CL):0] cache_line_index_for_MSHR_real_hit;
 logic need_to_evict_MSHR_real_hit; 
 `ifdef DIRECT_MAPPED
     assign cache_line_index_for_MSHR_real_hit = mshr_table[mshr_hit_index].cache_line_addr[`N_IDX_BITS + `DC_BO - 1:`DC_BO];
@@ -272,11 +272,11 @@ end
 /*** manage victim cache ***/
 logic vc_need_evict;
 VICTIM_CACHE_LINE vc_CL_evicted;
-logic [$clog2(`N_VC_CL)-1 : 0] vc_CL_evicted_index;   // if need to evict, this index contains the cache line to be evicted
-logic [$clog2(`N_VC_CL)-1 : 0] vc_free_index;   // if no need to evict, this index means one cache line not in use by VC
+logic [$clog2(`N_VC_CL) : 0] vc_CL_evicted_index;   // if need to evict, this index contains the cache line to be evicted
+logic [$clog2(`N_VC_CL) : 0] vc_free_index;   // if no need to evict, this index means one cache line not in use by VC
 // temporary variable signal
-logic [$clog2(`N_VC_CL)-1 : 0] current_smallest_index;
-logic [$clog2(`N_VC_CL)-1 : 0] current_smallest_lru;
+logic [$clog2(`N_VC_CL) : 0] current_smallest_index;
+logic [$clog2(`N_VC_CL) : 0] current_smallest_lru;
 always_comb begin : vc_evict_upon_full_find_avail_index
     vc_need_evict = '0;
     vc_CL_evicted = '0;
@@ -310,7 +310,7 @@ always_comb begin : vc_evict_upon_full_find_avail_index
     end
 end
 
-logic [$clog2(`N_VC_CL)-1 : 0] index_selector; // select free_index if not full, select evict_index if full
+logic [$clog2(`N_VC_CL) : 0] index_selector; // select free_index if not full, select evict_index if full
 assign index_selector = (vc_need_evict) ? vc_CL_evicted_index : vc_free_index;
 
 /** add, modify, erase victim cache cache lines **/
@@ -429,7 +429,7 @@ always_comb begin : gen_new_mshr_entry
 end
 
 // MSHR entries that are not occupied
-logic [$clog2(`N_MSHR)-1:0]  free_mshr_entry_idx [`N_PF:0];
+logic [$clog2(`N_MSHR):0]  free_mshr_entry_idx [`N_PF:0];
 
 /** modify free_mshr_entry_idx **/
 
@@ -450,7 +450,7 @@ always_comb begin : free_mshr_entry_index_determination
 end
 
 // index of MSHR entry that can be issued to memory
-logic [$clog2(`N_MSHR)-1:0] mshr_index_to_issue;
+logic [$clog2(`N_MSHR):0] mshr_index_to_issue;
 logic issue2mem;
 // connecting wires for renaming
 MSHR_ENTRY [`N_MSHR - 1 : 0] tmp_next_1_mshr_table;
@@ -591,7 +591,7 @@ end
 
 /*** determine if it's cache hit ***/
 `ifdef DIRECT_MAPPED
-    logic [`N_IDX_BITS-1:0] hit_idx_expected;
+    logic [`N_IDX_BITS:0] hit_idx_expected;
     
 
     assign hit_idx_expected = dcache_request.valid ? dcache_request.addr[`N_IDX_BITS + `DC_BO - 1:`DC_BO] : 

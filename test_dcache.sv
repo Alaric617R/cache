@@ -4,7 +4,7 @@
 
 
 `define DEBUG
-`define CLOCK_PERIOD 10
+
 module testbench;
     logic clock;
     logic reset;
@@ -228,7 +228,7 @@ module testbench;
  initial begin
         $display("/************* Start Testing! *************/");
         reset = 1;
-        clock = 0;
+        clock = 1;
         dcache_request = '0;
         $display("CLOCK: %d", `CLOCK_PERIOD);
         $display("/*** DCACHE INFO ***/");
@@ -246,29 +246,30 @@ module testbench;
             $display("ASSOCIATIVITY: NOT DEFINED! ABORT!");
             $finish;
         `endif 
-
-        @(posedge clock)  #3;
+        
+        @(negedge clock)  #3;
+        @(negedge clock)  #3;
         print_this_cycle_state;
 
-        @(posedge clock)  #3;
+        @(negedge clock)  #3;
         reset = 0;
         print_this_cycle_state;
 
-        @(posedge clock)  #3;
+        @(negedge clock)  #3;
         dcache_request = gen_dcache_read_request(32'h1000, BYTE, 1);
         print_this_cycle_state;
 
-        @(posedge clock)  #3;
+        @(negedge clock)  #3;
         print_this_cycle_state;
 
-        @(posedge clock)  #3;
+        @(negedge clock)  #3;
         print_this_cycle_state;
 
-        @(posedge clock)  #3;
+        @(negedge clock)  #3;
         print_this_cycle_state;
 
         
-        @(posedge clock)  #3;
+        @(negedge clock)  #3;
         print_this_cycle_state;
 
 

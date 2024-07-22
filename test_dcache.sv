@@ -37,6 +37,8 @@ module testbench;
     logic [$clog2(`N_MSHR)-1 : 0] dbg_n_mshr_avail;
     DC_STATE_T dbg_state;
     DCACHE_REQUEST  dbg_dcache_request_on_wait;
+    logic [$clog2(`N_MSHR):0] dbg_n_mshr_entry_freed_cnt;
+    logic [$clog2(`N_MSHR):0] dbg_n_mshr_entry_occupied_cnt;
 
     // CLOCK_PERIOD is defined on the commandline by the makefile
     always begin
@@ -70,7 +72,10 @@ module testbench;
         .dbg_mshr_table(dbg_mshr_table),
         .dbg_n_mshr_avail(dbg_n_mshr_avail),
         .dbg_state(dbg_state),
-        .dbg_dcache_request_on_wait(dbg_dcache_request_on_wait)
+        .dbg_dcache_request_on_wait(dbg_dcache_request_on_wait),
+        .dbg_n_mshr_entry_freed_cnt(dbg_n_mshr_entry_freed_cnt ),
+        .dbg_n_mshr_entry_occupied_cnt(dbg_n_mshr_entry_occupied_cnt)
+
     );
 
     mem mem(
@@ -148,12 +153,40 @@ module testbench;
         $write("\n");
     endtask
 
-    task print_stall_out;
+    task print_regs;
         $display("STALL_OUT: %0d", stall_out);
+        $display("N_MSHR_AVAIL: %0d", dbg_n_mshr_avail);
+        $display("N_VC_AVAIL: %0d", dbg_n_vc_avail);
+    endtask
+
+    task print_mem_bus;
+        $display("/*** MEM BUS INFO ***/");
+        case (proc2Dmem_command)
+            BUS_NONE: begin 
+                $display("BUS COMMAND: NONE");
+            end
+            BUS_LOAD: begin
+                $display("BUS COMMAND: LOAD");
+                $display("  proc2Dmem_addr: %0b", proc2Dmem_addr);
+                $display("  Dmem2proc_data: %0h", Dmem2proc_data);
+            end
+            BUS_STORE: begin
+                 $display("BUS COMMAND: STORE");
+                 $display("  proc2Dmem_data: %0h", proc2Dmem_data);
+            end
+        endcase
+        $display("  Dmem2proc_response: %0d", Dmem2proc_response);
+        $display("  Dmem2proc_tag: %0d", Dmem2proc_tag);
+    endtask
+
+    task print_combs;
+        $display("/*** COMBINATIONAL SIGNALS ***/");
+        $display("MSHR_ENTRY_FREED_CNT: %0d", dbg_n_mshr_entry_freed_cnt);
+        $display("MSHR_ENTRY_OCCUPIED_CNT: %0d", dbg_n_mshr_entry_occupied_cnt);
     endtask
 
     task print_this_cycle_state;
-        $display("/*** THIS CYCLE STATE ***/");
+        $display("/********************* THIS CYCLE STATE *********************/");
         $display("/* TIME: %d */", $time);
         case(dbg_state)
             READY: $display("STATE: READY");
@@ -161,7 +194,9 @@ module testbench;
             WAIT_MSHR : $display("STATE: WAIT_MSHR");
             FLUSH: $display("STATE: FLUSH");
         endcase
-        print_stall_out;
+        print_mem_bus;
+        print_regs;
+        print_combs;
         print_dcache_req_on_wait;
         print_MAIN_CACHE_LINES;
         print_VICTIM_CACHE_LINE;

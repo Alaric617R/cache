@@ -46,7 +46,9 @@ module dcache(
         output MSHR_ENTRY [`N_MSHR-1 : 0] dbg_mshr_table,
         output logic [$clog2(`N_MSHR)-1 : 0] dbg_n_mshr_avail,
         output DC_STATE_T dbg_state,
-        output DCACHE_REQUEST  dbg_dcache_request_on_wait
+        output DCACHE_REQUEST  dbg_dcache_request_on_wait,
+        output logic [$clog2(`N_MSHR):0] dbg_n_mshr_entry_freed_cnt,
+        output logic [$clog2(`N_MSHR):0] dbg_n_mshr_entry_occupied_cnt
 
     `endif
 );
@@ -520,8 +522,8 @@ always_comb begin : manage_MSHR
             tmp_next_2_mshr_table[free_mshr_entry_idx[i]].Dmem2proc_data = '0;
             tmp_next_2_mshr_table[free_mshr_entry_idx[i]].cache_line_addr = addrs2mshr[i].addr;
             tmp_next_2_mshr_table[free_mshr_entry_idx[i]].write_content = '0;
+            n_mshr_entry_occupied_cnt += addrs2mshr[i].valid;
         end
-        n_mshr_entry_occupied_cnt += (`N_PF + 1);
     end
 
     /** issue memory request (STILL NEED IT WHEN STATE IS FLUSH) **/
@@ -678,13 +680,14 @@ always_ff @( posedge clock ) begin
 end
 
 `ifdef DEBUG
-assign dbg_main_cache_lines         = main_cache_lines;
-assign dbg_victim_cache_lines       = victim_cache_lines;
-assign dbg_n_vc_avail               = n_vc_avail;
-assign dbg_mshr_table               = mshr_table;
-assign dbg_state                    = state;
-assign dbg_dcache_request_on_wait   = dcache_request_on_wait;
-
+assign dbg_main_cache_lines             = main_cache_lines;
+assign dbg_victim_cache_lines           = victim_cache_lines;
+assign dbg_n_vc_avail                   = n_vc_avail;
+assign dbg_mshr_table                   = mshr_table;
+assign dbg_state                        = state;
+assign dbg_dcache_request_on_wait       = dcache_request_on_wait;
+assign dbg_n_mshr_entry_freed_cnt       = n_mshr_entry_freed_cnt;
+assign dbg_n_mshr_entry_occupied_cnt    = n_mshr_entry_occupied_cnt;
 `endif 
 endmodule
 

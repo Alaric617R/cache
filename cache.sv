@@ -459,6 +459,10 @@ MSHR_ENTRY [`N_MSHR - 1 : 0] tmp_next_3_mshr_table;
 
 `ifdef DIRECT_MAPPED
 always_comb begin : manage_MSHR
+    `ifdef DEBUG
+        dbg_n_mshr_entry_freed_cnt = '0;
+        dbg_n_mshr_entry_occupied_cnt = '0;
+    `endif macro
     int  n_mshr_entry_freed_cnt = 0;
     int  n_mshr_entry_occupied_cnt = 0;
     tmp_next_1_mshr_table = mshr_table;
@@ -569,7 +573,10 @@ always_comb begin : manage_MSHR
     /** update mshr free entry count and final version of next_mshr_table**/
     next_n_mshr_avail = n_mshr_avail + n_mshr_entry_freed_cnt - n_mshr_entry_occupied_cnt;
     next_mshr_table = tmp_next_3_mshr_table;
-    
+    `ifdef DEBUG
+    dbg_n_mshr_entry_freed_cnt = n_mshr_entry_freed_cnt;
+    dbg_n_mshr_entry_occupied_cnt = n_mshr_entry_occupied_cnt;
+    `endif 
 end
 `endif
 

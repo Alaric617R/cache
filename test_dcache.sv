@@ -246,9 +246,9 @@ module testbench;
             $display("ASSOCIATIVITY: NOT DEFINED! ABORT!");
             $finish;
         `endif 
-        
+
         @(posedge clock)  #3;
-        print_this_cycle_state
+        print_this_cycle_state;
 
         @(posedge clock)  #3;
         reset = 0;

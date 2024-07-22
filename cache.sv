@@ -674,6 +674,8 @@ always_ff @( posedge clock ) begin
         n_mshr_avail                <= `N_MSHR;
         state                       <=  READY;
         dcache_request_on_wait      <= '0;
+        $display("inside ff, N_MSHR: %d", `N_MSHR);
+        $display("inside ff, N_VC_CL: %d", `N_VC_CL);
     end else begin
         dcache_response             <= next_dcache_response;
         main_cache_lines            <= next_main_cache_lines;

@@ -228,7 +228,7 @@ module testbench;
  initial begin
         $display("/************* Start Testing! *************/");
         reset = 1;
-        clock = 1;
+        clock = 0;
         dcache_request = '0;
         $display("CLOCK: %d", `CLOCK_PERIOD);
         $display("/*** DCACHE INFO ***/");

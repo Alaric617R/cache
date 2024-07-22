@@ -693,8 +693,7 @@ assign dbg_n_vc_avail                   = n_vc_avail;
 assign dbg_mshr_table                   = mshr_table;
 assign dbg_state                        = state;
 assign dbg_dcache_request_on_wait       = dcache_request_on_wait;
-assign dbg_n_mshr_entry_freed_cnt       = n_mshr_entry_freed_cnt;
-assign dbg_n_mshr_entry_occupied_cnt    = n_mshr_entry_occupied_cnt;
+
 `endif 
 endmodule
 

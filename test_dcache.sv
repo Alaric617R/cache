@@ -246,21 +246,25 @@ module testbench;
             $display("ASSOCIATIVITY: NOT DEFINED! ABORT!");
             $finish;
         `endif 
-        
+
         @(negedge clock)  #3;
         @(negedge clock)  #3;
         print_this_cycle_state;
+        $display("RESET: %d", reset);
 
         @(negedge clock)  #3;
         reset = 0;
         print_this_cycle_state;
+        $display("RESET: %d", reset);
 
         @(negedge clock)  #3;
         dcache_request = gen_dcache_read_request(32'h1000, BYTE, 1);
         print_this_cycle_state;
+        $display("RESET: %d", reset);
 
         @(negedge clock)  #3;
         print_this_cycle_state;
+        $display("RESET: %d", reset);
 
         @(negedge clock)  #3;
         print_this_cycle_state;

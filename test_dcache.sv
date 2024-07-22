@@ -253,7 +253,6 @@ module testbench;
         $display("RESET: %d", reset);
 
         @(negedge clock)  #3;
-        reset = 0;
         print_this_cycle_state;
         $display("RESET: %d", reset);
 

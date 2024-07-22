@@ -691,6 +691,7 @@ assign dbg_main_cache_lines             = main_cache_lines;
 assign dbg_victim_cache_lines           = victim_cache_lines;
 assign dbg_n_vc_avail                   = n_vc_avail;
 assign dbg_mshr_table                   = mshr_table;
+assign dbg_n_mshr_avail                 = n_mshr_avail;
 assign dbg_state                        = state;
 assign dbg_dcache_request_on_wait       = dcache_request_on_wait;
 

@@ -464,6 +464,7 @@ always_ff @(negedge clock) begin
         $display("free_mshr_entry_idx[%d]: %d", i, free_mshr_entry_idx[i]);
     end
 end
+`endif 
 
 // index of MSHR entry that can be issued to memory
 logic [$clog2(`N_MSHR):0] mshr_index_to_issue;

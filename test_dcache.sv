@@ -39,6 +39,9 @@ module testbench;
     DCACHE_REQUEST  dbg_dcache_request_on_wait;
     logic [$clog2(`N_MSHR):0] dbg_n_mshr_entry_freed_cnt;
     logic [$clog2(`N_MSHR):0] dbg_n_mshr_entry_occupied_cnt;
+    MSHR_ENTRY dbg_mshr2dcache_packet;
+    VICTIM_CACHE_LINE dbg_vic_cache_line_evicted;
+    MEM_ADDR_T dbg_main_cache_line_evicted_addr;
 
     // CLOCK_PERIOD is defined on the commandline by the makefile
     always begin
@@ -75,7 +78,9 @@ module testbench;
         .dbg_dcache_request_on_wait(dbg_dcache_request_on_wait),
         .dbg_n_mshr_entry_freed_cnt(dbg_n_mshr_entry_freed_cnt ),
         .dbg_n_mshr_entry_occupied_cnt(dbg_n_mshr_entry_occupied_cnt)
-
+        .dbg_mshr2dcache_packet(dbg_mshr2dcache_packet),
+        .dbg_vic_cache_line_evicted(dbg_vic_cache_line_evicted),
+        .dbg_main_cache_line_evicted_addr(dbg_main_cache_line_evicted_addr)
     );
 
     mem mem(
@@ -107,6 +112,7 @@ module testbench;
             end
         end
         $write("\n");
+
     endtask
 
     task print_MAIN_CACHE_LINES;
@@ -183,6 +189,27 @@ module testbench;
         $display("/*** COMBINATIONAL SIGNALS ***/");
         $display("MSHR_ENTRY_FREED_CNT: %0d", dbg_n_mshr_entry_freed_cnt);
         $display("MSHR_ENTRY_OCCUPIED_CNT: %0d", dbg_n_mshr_entry_occupied_cnt);
+        if (dbg_mshr2dcache_packet.valid) begin
+            $display("MSHR2DCACHE_PACKET: VALID");
+            $display("  valid: %0d", dbg_mshr2dcache_packet.valid);
+            $display("  is_req: %0d", dbg_mshr2dcache_packet.is_req);
+            $display("  mem_op: %0d", dbg_mshr2dcache_packet.mem_op);
+            $display("  Dmem2proc_tag: %0d", dbg_mshr2dcache_packet.Dmem2proc_tag);
+            $display("  Dmem2proc_data: %0h", dbg_mshr2dcache_packet.Dmem2proc_data);
+            $display("  cache_line_addr: %0b", dbg_mshr2dcache_packet.cache_line_addr);
+            $display("  write_content: %0h", dbg_mshr2dcache_packet.write_content);
+        end
+        if (dbg_vic_cache_line_evicted.valid) begin
+            $display("VIC_CACHE_LINE_EVICTED: VALID");
+            $display("  valid: %0d", dbg_vic_cache_line_evicted.valid);
+            $display("  dirty: %0d", dbg_vic_cache_line_evicted.dirty);
+            $display("  lru: %0d", dbg_vic_cache_line_evicted.lru);
+            $display("  tag: %0b", dbg_vic_cache_line_evicted.tag);
+            $display("  block: %0h", dbg_vic_cache_line_evicted.block);
+        end
+        if (dbg_main_cache_line_evicted_addr) begin
+            $display("MAIN_CACHE_LINE_EVICTED_ADDR: %0b", dbg_main_cache_line_evicted_addr);
+        end
     endtask
 
     task print_this_cycle_state;
@@ -211,6 +238,7 @@ module testbench;
         req.size = size;
         req.valid = 1;
         req.pc = pc;
+        $display("DCACHE REQUEST GENERATED: READ addr: %0b, size: %0d, pc: %0h", addr, size, pc);
         return req;
     endfunction
 

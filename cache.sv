@@ -48,7 +48,11 @@ module dcache(
         output DC_STATE_T dbg_state,
         output DCACHE_REQUEST  dbg_dcache_request_on_wait,
         output logic [$clog2(`N_MSHR):0] dbg_n_mshr_entry_freed_cnt,
-        output logic [$clog2(`N_MSHR):0] dbg_n_mshr_entry_occupied_cnt
+        output logic [$clog2(`N_MSHR):0] dbg_n_mshr_entry_occupied_cnt,
+        output MSHR_ENTRY dbg_mshr2dcache_packet,
+        output VICTIM_CACHE_LINE dbg_vic_cache_line_evicted,
+        output MEM_ADDR_T dbg_main_cache_line_evicted_addr
+
 
     `endif
 );
@@ -420,10 +424,10 @@ always_comb begin : gen_new_mshr_entry
     addrs2mshr = '0;
     base_addr  = (state == READY) ? dcache_request.addr : dcache_request_on_wait.addr;
     for (int i=0; i<`N_PF+1;i++) begin
-        addrs2mshr[i].addr = base_addr + i*(`DC_BLK_SZ)*8;
-        addrs2mshr[i].valid = addr_not_in_main_cache(base_addr + i*(`DC_BLK_SZ)*8)   & 
-                              addr_not_in_victim_cache(base_addr + i*(`DC_BLK_SZ)*8) & 
-                              addr_not_in_MSHR_packet(base_addr + i*(`DC_BLK_SZ)*8);
+        addrs2mshr[i].addr = base_addr + i*8;
+        addrs2mshr[i].valid = addr_not_in_main_cache(base_addr + i*8)   & 
+                              addr_not_in_victim_cache(base_addr + i*8) & 
+                              addr_not_in_MSHR_packet(base_addr + i*8);
 
     end
 end
@@ -452,6 +456,7 @@ end
 // index of MSHR entry that can be issued to memory
 logic [$clog2(`N_MSHR):0] mshr_index_to_issue;
 logic issue2mem;
+logic can_allocate_new_mshr_entry;
 // connecting wires for renaming
 MSHR_ENTRY [`N_MSHR - 1 : 0] tmp_next_1_mshr_table;
 MSHR_ENTRY [`N_MSHR - 1 : 0] tmp_next_2_mshr_table;
@@ -517,18 +522,19 @@ always_comb begin : manage_MSHR
     end
 
     /** allocate new MSHR entry when there are enough MSHR free entry **/
-    if ( ( (state == READY) & (next_state == WAIT) ) | ( (state == WAIT_MSHR) & (next_state == WAIT) ) ) begin
-        for (int i=0; i<`N_PF+1;i++) begin
-            tmp_next_2_mshr_table[free_mshr_entry_idx[i]].valid = addrs2mshr[i].valid;
-            tmp_next_2_mshr_table[free_mshr_entry_idx[i]].is_req = (i==0)? '1:'0; // index zero is the request, the rest are prefetch
-            tmp_next_2_mshr_table[free_mshr_entry_idx[i]].mem_op =  MEM_READ; // for write-back, all request needs to be loaded to cache first. Therefore even though it's store we load the cache line as load operation and write the dirty cache line in place in the cache
-            tmp_next_2_mshr_table[free_mshr_entry_idx[i]].Dmem2proc_tag = '0;
-            tmp_next_2_mshr_table[free_mshr_entry_idx[i]].Dmem2proc_data = '0;
-            tmp_next_2_mshr_table[free_mshr_entry_idx[i]].cache_line_addr = addrs2mshr[i].addr;
-            tmp_next_2_mshr_table[free_mshr_entry_idx[i]].write_content = '0;
-            n_mshr_entry_occupied_cnt += addrs2mshr[i].valid;
-        end
+    can_allocate_new_mshr_entry =  ( (state == READY) & (next_state == WAIT) ) | ( (state == WAIT_MSHR) & (next_state == WAIT) );
+    $display("time: %d MSHR: can_allocate_new_mshr_entry: %d", $time, can_allocate_new_mshr_entry);
+    for (int i=0; i<`N_PF+1;i++) begin
+        tmp_next_2_mshr_table[free_mshr_entry_idx[i]].valid = addrs2mshr[i].valid & can_allocate_new_mshr_entry;
+        tmp_next_2_mshr_table[free_mshr_entry_idx[i]].is_req = (i==0)? '1:'0; // index zero is the request, the rest are prefetch
+        tmp_next_2_mshr_table[free_mshr_entry_idx[i]].mem_op =  MEM_READ; // for write-back, all request needs to be loaded to cache first. Therefore even though it's store we load the cache line as load operation and write the dirty cache line in place in the cache
+        tmp_next_2_mshr_table[free_mshr_entry_idx[i]].Dmem2proc_tag = '0;
+        tmp_next_2_mshr_table[free_mshr_entry_idx[i]].Dmem2proc_data = '0;
+        tmp_next_2_mshr_table[free_mshr_entry_idx[i]].cache_line_addr = addrs2mshr[i].addr;
+        tmp_next_2_mshr_table[free_mshr_entry_idx[i]].write_content = '0;
+        n_mshr_entry_occupied_cnt += addrs2mshr[i].valid;
     end
+
 
     /** issue memory request (STILL NEED IT WHEN STATE IS FLUSH) **/
     // find the most proper index to issue
@@ -572,6 +578,8 @@ always_comb begin : manage_MSHR
 
     /** update mshr free entry count and final version of next_mshr_table**/
     next_n_mshr_avail = n_mshr_avail + n_mshr_entry_freed_cnt - n_mshr_entry_occupied_cnt;
+    $display("time: %d MSHR: n_mshr_entry_freed_cnt: %d", $time, n_mshr_entry_freed_cnt);
+    $display("time: %d MSHR: n_mshr_entry_occupied_cnt: %d", $time, n_mshr_entry_occupied_cnt);
     next_mshr_table = tmp_next_3_mshr_table;
     `ifdef DEBUG
     dbg_n_mshr_entry_freed_cnt = n_mshr_entry_freed_cnt;
@@ -696,6 +704,9 @@ assign dbg_mshr_table                   = mshr_table;
 assign dbg_n_mshr_avail                 = n_mshr_avail;
 assign dbg_state                        = state;
 assign dbg_dcache_request_on_wait       = dcache_request_on_wait;
+assign dbg_mshr2dcache_packet           = mshr2dcache_packet;
+assign dbg_vic_cache_line_evicted       = vic_cache_line_evicted;
+assign dbg_main_cache_line_evicted_addr = main_cache_line_evicted_addr;
 
 `endif 
 endmodule

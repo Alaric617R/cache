@@ -77,7 +77,7 @@ module testbench;
         .dbg_state(dbg_state),
         .dbg_dcache_request_on_wait(dbg_dcache_request_on_wait),
         .dbg_n_mshr_entry_freed_cnt(dbg_n_mshr_entry_freed_cnt ),
-        .dbg_n_mshr_entry_occupied_cnt(dbg_n_mshr_entry_occupied_cnt)
+        .dbg_n_mshr_entry_occupied_cnt(dbg_n_mshr_entry_occupied_cnt),
         .dbg_mshr2dcache_packet(dbg_mshr2dcache_packet),
         .dbg_vic_cache_line_evicted(dbg_vic_cache_line_evicted),
         .dbg_main_cache_line_evicted_addr(dbg_main_cache_line_evicted_addr)

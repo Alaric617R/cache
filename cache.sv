@@ -452,24 +452,6 @@ always_comb begin : free_mshr_entry_index_determination
     end
 end
 
-`ifdef DEBUG
-always_ff @(negedge clock) begin
-    $display("/*** idx_wires for MSHR | TIME: %d ***/", $time);
-    for (int i=0; i<`N_MSHR; i++) begin
-        $display("idx_wires[%d]: %d", i, idx_wires[i]);
-    end
-
-    $display("/*** free_mshr_entry_idx ***/");
-    for (int i=0; i<`N_PF+1; i++) begin
-        $display("free_mshr_entry_idx[%d]: %d", i, free_mshr_entry_idx[i]);
-    end
-
-     $display("/*** n_mshr_avail_wires ***/");
-    for (int i=0; i<`N_MSHR+1; i++) begin
-        $display("n_mshr_avail_wires[%d]: %d", i, n_mshr_avail_wires[i]);
-    end
-end
-`endif 
 
 // index of MSHR entry that can be issued to memory
 logic [$clog2(`N_MSHR):0] mshr_index_to_issue;
@@ -613,6 +595,25 @@ always_comb begin : manage_MSHR
 end
 `endif
 
+`ifdef DEBUG
+always_ff @(negedge clock) begin
+    $display("/*** idx_wires for MSHR | TIME: %d ***/", $time);
+    for (int i=0; i<`N_MSHR; i++) begin
+        $display("idx_wires[%d]: %d", i, idx_wires[i]);
+    end
+
+    $display("/*** free_mshr_entry_idx ***/");
+    for (int i=0; i<`N_PF+1; i++) begin
+        $display("free_mshr_entry_idx[%d]: %d", i, free_mshr_entry_idx[i]);
+    end
+
+     $display("/*** n_mshr_avail_wires ***/");
+    for (int i=0; i<`N_MSHR+1; i++) begin
+        $display("n_mshr_avail_wires[%d]: %d", i, n_mshr_avail_wires[i]);
+    end
+end
+`endif 
+
 
 /*** determine which cache line the request should go ***/
 `ifdef DIRECT_MAPPED
@@ -650,6 +651,24 @@ end
 
 `endif
 
+`ifdef DEBUG
+always_ff @(negedge clock) begin
+    $display("/*** idx_wires for MSHR | TIME: %d ***/", $time);
+    for (int i=0; i<`N_MSHR; i++) begin
+        $display("idx_wires[%d]: %d", i, idx_wires[i]);
+    end
+
+    $display("/*** free_mshr_entry_idx ***/");
+    for (int i=0; i<`N_PF+1; i++) begin
+        $display("free_mshr_entry_idx[%d]: %d", i, free_mshr_entry_idx[i]);
+    end
+
+     $display("/*** n_mshr_avail_wires ***/");
+    for (int i=0; i<`N_MSHR+1; i++) begin
+        $display("n_mshr_avail_wires[%d]: %d", i, n_mshr_avail_wires[i]);
+    end
+end
+`endif 
 /*** determine if it's victim cache hit ***/
 always_comb begin : determine_victim_cache_hit
     vc_hit                  = '0;

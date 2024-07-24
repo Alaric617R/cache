@@ -581,7 +581,11 @@ always_comb begin : manage_MSHR
 
     /** update mshr free entry count and final version of next_mshr_table**/
     for(int i=1; i<`N_MSHR+1; i++) begin
-        n_mshr_avail_wires[i] = n_mshr_avail_wires[i-1] + (~tmp_next_3_mshr_table[i-1].valid); 
+        if (~tmp_next_3_mshr_table[i-1].valid) begin
+            n_mshr_avail_wires[i] = n_mshr_avail_wires[i-1] + 1; 
+        end else begin
+            n_mshr_avail_wires[i] = n_mshr_avail_wires[i-1];
+        end
     end
     next_mshr_table = tmp_next_3_mshr_table;
     next_n_mshr_avail = n_mshr_avail_wires[`N_MSHR];

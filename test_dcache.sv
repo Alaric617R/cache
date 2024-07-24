@@ -187,8 +187,8 @@ module testbench;
 
     task print_combs;
         $display("/*** COMBINATIONAL SIGNALS ***/");
-        $display("MSHR_ENTRY_FREED_CNT: %0d", dbg_n_mshr_entry_freed_cnt);
-        $display("MSHR_ENTRY_OCCUPIED_CNT: %0d", dbg_n_mshr_entry_occupied_cnt);
+        // $display("MSHR_ENTRY_FREED_CNT: %0d", dbg_n_mshr_entry_freed_cnt);
+        // $display("MSHR_ENTRY_OCCUPIED_CNT: %0d", dbg_n_mshr_entry_occupied_cnt);
         if (dbg_mshr2dcache_packet.valid) begin
             $display("MSHR2DCACHE_PACKET: VALID");
             $display("  valid: %0d", dbg_mshr2dcache_packet.valid);

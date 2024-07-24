@@ -463,6 +463,11 @@ always_ff @(negedge clock) begin
     for (int i=0; i<`N_PF+1; i++) begin
         $display("free_mshr_entry_idx[%d]: %d", i, free_mshr_entry_idx[i]);
     end
+
+     $display("/*** n_mshr_avail_wires ***/");
+    for (int i=0; i<`N_MSHR+1; i++) begin
+        $display("n_mshr_avail_wires[%d]: %d", i, n_mshr_avail_wires[i]);
+    end
 end
 `endif 
 

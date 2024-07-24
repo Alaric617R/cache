@@ -433,7 +433,7 @@ always_comb begin : gen_new_mshr_entry
 end
 
 // MSHR entries that are not occupied
-logic [$clog2(`N_MSHR):0] [`N_PF:0]  free_mshr_entry_idx ;
+logic [`N_PF:0] [$clog2(`N_MSHR):0]   free_mshr_entry_idx ;
 
 /** modify free_mshr_entry_idx **/
 logic [`N_MSHR:0] [`N_PF:0] idx_wires;
@@ -462,7 +462,7 @@ MSHR_ENTRY [`N_MSHR - 1 : 0] tmp_next_1_mshr_table;
 MSHR_ENTRY [`N_MSHR - 1 : 0] tmp_next_2_mshr_table;
 MSHR_ENTRY [`N_MSHR - 1 : 0] tmp_next_3_mshr_table;
 // wires for counter
-logic [$clog2(`N_MSHR):0] [`N_MSHR:0] n_mshr_avail_wires;
+logic [`N_MSHR:0] [$clog2(`N_MSHR):0]  n_mshr_avail_wires;
 `ifdef DIRECT_MAPPED
 always_comb begin : manage_MSHR
     // int  n_mshr_entry_freed_cnt = 0;

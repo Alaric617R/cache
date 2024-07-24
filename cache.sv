@@ -433,23 +433,35 @@ always_comb begin : gen_new_mshr_entry
 end
 
 // MSHR entries that are not occupied
-logic [$clog2(`N_MSHR):0]  free_mshr_entry_idx [`N_PF:0];
+logic [$clog2(`N_MSHR):0] [`N_PF:0]  free_mshr_entry_idx ;
 
 /** modify free_mshr_entry_idx **/
-
+logic [`N_MSHR:0] [`N_PF:0] idx_wires;
 always_comb begin : free_mshr_entry_index_determination
-    int count_f = 0;
-    // initialize two dimensional array
-    for (int i=0; i<`N_PF+1;i++) begin
-        free_mshr_entry_idx[i] = '0;
-    end
+
+    free_mshr_entry_idx = '0;
+    idx_wires = '0;
+
 
     for (int i=0; i<`N_MSHR;i++) begin
-        if (mshr_table[i].valid == '0) begin
-            free_mshr_entry_idx[count_f] = i;
-            count_f ++;
-            if (count_f == `N_PF+1) break;
-        end
+        if (~mshr_table[i].valid) begin
+            free_mshr_entry_idx[idx_wires[i]] = i;
+            idx_wires[i+1] = idx_wires[i] + 1;
+            if (idx_wires[i] == `N_PF) break;
+        end else if (i>0) idx_wires[i] = idx_wires[i-1];
+    end
+end
+
+`ifdef DEBUG
+always_ff @(negedge clock) begin
+    $display("/*** idx_wires for MSHR | TIME: %d ***/", $time);
+    for (int i=0; i<`N_MSHR; i++) begin
+        $display("idx_wires[%d]: %d", i, idx_wires[i]);
+    end
+
+    $display("/*** free_mshr_entry_idx ***/")
+    for (int i=0; i<`N_PF+1; i++) begin
+        $display("free_mshr_entry_idx[%d]: %d", i, free_mshr_entry_idx[i]);
     end
 end
 
@@ -461,18 +473,21 @@ logic can_allocate_new_mshr_entry;
 MSHR_ENTRY [`N_MSHR - 1 : 0] tmp_next_1_mshr_table;
 MSHR_ENTRY [`N_MSHR - 1 : 0] tmp_next_2_mshr_table;
 MSHR_ENTRY [`N_MSHR - 1 : 0] tmp_next_3_mshr_table;
-
+// wires for counter
+logic [$clog2(`N_MSHR):0] [`N_MSHR:0] n_mshr_avail_wires;
 `ifdef DIRECT_MAPPED
 always_comb begin : manage_MSHR
-    int  n_mshr_entry_freed_cnt = 0;
-    int  n_mshr_entry_occupied_cnt = 0;
-    tmp_next_1_mshr_table = mshr_table;
-    next_n_mshr_avail = n_mshr_avail;
-    `ifdef DEBUG
-        dbg_n_mshr_entry_freed_cnt = '0;
-        dbg_n_mshr_entry_occupied_cnt = '0;
-    `endif 
-    // counter for number of MSHR entry change
+    // int  n_mshr_entry_freed_cnt = 0;
+    // int  n_mshr_entry_occupied_cnt = 0;
+    // `ifdef DEBUG
+    //     dbg_n_mshr_entry_freed_cnt = '0;
+    //     dbg_n_mshr_entry_occupied_cnt = '0;
+    // `endif 
+
+    tmp_next_1_mshr_table   = mshr_table;
+    next_n_mshr_avail       = n_mshr_avail;
+    n_mshr_avail_wires      = '0;
+
 
     
     /** flush MSHR when done, invalidate all LOAD operations **/
@@ -491,7 +506,7 @@ always_comb begin : manage_MSHR
                 tmp_next_1_mshr_table[i] = '0;    // clear MSHR entry when finished
                 mshr2dcache_packet = mshr_table[i];
                 mshr2dcache_packet.Dmem2proc_data = Dmem2proc_data;
-                n_mshr_entry_freed_cnt ++;  // free one entry
+                // n_mshr_entry_freed_cnt ++;  // free one entry
             end
         end
     end
@@ -508,7 +523,7 @@ always_comb begin : manage_MSHR
                 tmp_next_2_mshr_table[i].Dmem2proc_data = vic_cache_line_evicted.block;
                 tmp_next_2_mshr_table[i].cache_line_addr = {vic_cache_line_evicted.tag, 3'b0};    // since it is fully associative cache, no index bits
                 tmp_next_2_mshr_table[i].write_content = vic_cache_line_evicted.block;
-                n_mshr_entry_occupied_cnt ++; // occupy one entry
+                // n_mshr_entry_occupied_cnt ++; // occupy one entry
                 break;
             end
         end
@@ -532,7 +547,7 @@ always_comb begin : manage_MSHR
         tmp_next_2_mshr_table[free_mshr_entry_idx[i]].Dmem2proc_data = '0;
         tmp_next_2_mshr_table[free_mshr_entry_idx[i]].cache_line_addr = addrs2mshr[i].addr;
         tmp_next_2_mshr_table[free_mshr_entry_idx[i]].write_content = '0;
-        n_mshr_entry_occupied_cnt += addrs2mshr[i].valid;
+        // n_mshr_entry_occupied_cnt += addrs2mshr[i].valid;
     end
 
 
@@ -568,7 +583,7 @@ always_comb begin : manage_MSHR
         // if it's store, upon memory response, free the entry immediately
         if ( (tmp_next_2_mshr_table[mshr_index_to_issue].mem_op == MEM_WRITE) & (Dmem2proc_response != '0) )begin
              tmp_next_3_mshr_table[mshr_index_to_issue] = '0; 
-             n_mshr_entry_freed_cnt ++; // free one entry
+            //  n_mshr_entry_freed_cnt ++; // free one entry
         end
     end else begin
         proc2Dmem_command = BUS_NONE;
@@ -577,14 +592,18 @@ always_comb begin : manage_MSHR
     end
 
     /** update mshr free entry count and final version of next_mshr_table**/
-    next_n_mshr_avail = n_mshr_avail + n_mshr_entry_freed_cnt - n_mshr_entry_occupied_cnt;
-    $display("time: %d MSHR: n_mshr_entry_freed_cnt: %d", $time, n_mshr_entry_freed_cnt);
-    $display("time: %d MSHR: n_mshr_entry_occupied_cnt: %d", $time, n_mshr_entry_occupied_cnt);
+    for(int i=1; i<`N_MSHR+1; i++) begin
+        n_mshr_avail_wires[i] = n_mshr_avail_wires[i-1] + (~tmp_next_3_mshr_table[i-1].valid); 
+    end
     next_mshr_table = tmp_next_3_mshr_table;
-    `ifdef DEBUG
-    dbg_n_mshr_entry_freed_cnt = n_mshr_entry_freed_cnt;
-    dbg_n_mshr_entry_occupied_cnt = n_mshr_entry_occupied_cnt;
-    `endif 
+    next_n_mshr_avail = n_mshr_avail_wires[`N_MSHR];
+    // next_n_mshr_avail = n_mshr_avail + n_mshr_entry_freed_cnt - n_mshr_entry_occupied_cnt;
+    // $display("time: %d MSHR: n_mshr_entry_freed_cnt: %d", $time, n_mshr_entry_freed_cnt);
+    // $display("time: %d MSHR: n_mshr_entry_occupied_cnt: %d", $time, n_mshr_entry_occupied_cnt);
+    // `ifdef DEBUG
+    // dbg_n_mshr_entry_freed_cnt = n_mshr_entry_freed_cnt;
+    // dbg_n_mshr_entry_occupied_cnt = n_mshr_entry_occupied_cnt;
+    // `endif 
 end
 `endif
 

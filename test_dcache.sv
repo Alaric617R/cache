@@ -305,6 +305,14 @@ module testbench;
         @(negedge clock)  #3;
         print_this_cycle_state;
 
+                
+        @(negedge clock)  #3;
+        print_this_cycle_state;
+
+                
+        @(negedge clock)  #3;
+        print_this_cycle_state;
+
 
         
         $finish;

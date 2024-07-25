@@ -489,7 +489,7 @@ always_comb begin : manage_MSHR
     mshr2dcache_packet = '0;
     if (Dmem2proc_tag & (state != FLUSH) ) begin
         for (int i=0; i<`N_MSHR;i++) begin
-            if (mshr_table[i].Dmem2proc_tag == Dmem2proc_tag) begin
+            if (mshr_table[i].valid & mshr_table[i].Dmem2proc_tag == Dmem2proc_tag) begin
                 assert(mshr_table[i].mem_op == MEM_READ) else $display("MSHR: memory response tag matched with STORE operation!");
                 tmp_next_1_mshr_table[i] = '0;    // clear MSHR entry when finished
                 mshr2dcache_packet = mshr_table[i];

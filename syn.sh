@@ -1,3 +1,8 @@
 git add .;
-git commit -m "update for test";
+if [ -z "$1" ]; then
+    git commit -m "update for test";
+else
+    git commit -m "$1";
+fi
 git push;
+

@@ -148,15 +148,16 @@ module testbench;
         $display("/*** DCACHE REQUEST ON WAIT ***/");
         if (~dbg_dcache_request_on_wait.valid) begin
             $display("No request on wait");
+        end else begin
+            $write("  mem_op: %0d", dbg_dcache_request_on_wait.mem_op);
+            $write("  addr: %0b", dbg_dcache_request_on_wait.addr);
+            $write("  size: %0d", dbg_dcache_request_on_wait.size);
+            $write("  write_content: %0h", dbg_dcache_request_on_wait.write_content);
+            $write("  valid: %0d", dbg_dcache_request_on_wait.valid);
+            $write("  pc: %0h", dbg_dcache_request_on_wait.pc);
+            $write("\n");
+            $write("\n");
         end
-        $write("  mem_op: %0d", dbg_dcache_request_on_wait.mem_op);
-        $write("  addr: %0b", dbg_dcache_request_on_wait.addr);
-        $write("  size: %0d", dbg_dcache_request_on_wait.size);
-        $write("  write_content: %0h", dbg_dcache_request_on_wait.write_content);
-        $write("  valid: %0d", dbg_dcache_request_on_wait.valid);
-        $write("  pc: %0h", dbg_dcache_request_on_wait.pc);
-        $write("\n");
-        $write("\n");
     endtask
 
     task print_regs;
@@ -173,14 +174,14 @@ module testbench;
             end
             BUS_LOAD: begin
                 $display("BUS COMMAND: LOAD");
-                $display("  proc2Dmem_addr: %0b", proc2Dmem_addr);
-                $display("  Dmem2proc_data: %0h", Dmem2proc_data);
             end
             BUS_STORE: begin
                  $display("BUS COMMAND: STORE");
                  $display("  proc2Dmem_data: %0h", proc2Dmem_data);
             end
         endcase
+        $display("  proc2Dmem_addr: %0b", proc2Dmem_addr);
+        $display("  Dmem2proc_data: %0h", Dmem2proc_data);
         $display("  Dmem2proc_response: %0d", Dmem2proc_response);
         $display("  Dmem2proc_tag: %0d", Dmem2proc_tag);
     endtask

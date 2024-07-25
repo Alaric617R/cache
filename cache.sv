@@ -489,7 +489,8 @@ always_comb begin : manage_MSHR
     mshr2dcache_packet = '0;
     if (Dmem2proc_tag & (state != FLUSH) ) begin
         for (int i=0; i<`N_MSHR;i++) begin
-            if (mshr_table[i].valid & mshr_table[i].Dmem2proc_tag == Dmem2proc_tag) begin
+            if (mshr_table[i].valid & (mshr_table[i].Dmem2proc_tag == Dmem2proc_tag)) begin
+                $display("hihihi!!!");
                 assert(mshr_table[i].mem_op == MEM_READ) else $display("MSHR: memory response tag matched with STORE operation!");
                 tmp_next_1_mshr_table[i] = '0;    // clear MSHR entry when finished
                 mshr2dcache_packet = mshr_table[i];
@@ -561,6 +562,8 @@ always_comb begin : manage_MSHR
         end 
     end
     // issue request to memory if there is any 
+    proc2Dmem_addr = '0;
+    proc2Dmem_data = '0;
     if (issue2mem) begin
         // form request to memory
         proc2Dmem_command = (tmp_next_2_mshr_table[mshr_index_to_issue].mem_op == MEM_READ) ? BUS_LOAD : BUS_STORE;
@@ -569,7 +572,7 @@ always_comb begin : manage_MSHR
         // wait response from memory
         tmp_next_3_mshr_table[mshr_index_to_issue].Dmem2proc_tag = Dmem2proc_response;
         // if it's store, upon memory response, free the entry immediately
-        if ( (tmp_next_2_mshr_table[mshr_index_to_issue].mem_op == MEM_WRITE) & (Dmem2proc_response != '0) )begin
+        if ( (tmp_next_2_mshr_table[mshr_index_to_issue].mem_op == MEM_WRITE) & (Dmem2proc_response) )begin
              tmp_next_3_mshr_table[mshr_index_to_issue] = '0; 
             //  n_mshr_entry_freed_cnt ++; // free one entry
         end
@@ -599,24 +602,24 @@ always_comb begin : manage_MSHR
 end
 `endif
 
-`ifdef DEBUG
-always_ff @(negedge clock) begin
-    $display("/*** idx_wires for MSHR | TIME: %d ***/", $time);
-    for (int i=0; i<`N_MSHR; i++) begin
-        $display("idx_wires[%d]: %d", i, idx_wires[i]);
-    end
+// `ifdef DEBUG
+// always_ff @(negedge clock) begin
+//     $display("/*** idx_wires for MSHR | TIME: %d ***/", $time);
+//     for (int i=0; i<`N_MSHR; i++) begin
+//         $display("idx_wires[%d]: %d", i, idx_wires[i]);
+//     end
 
-    $display("/*** free_mshr_entry_idx ***/");
-    for (int i=0; i<`N_PF+1; i++) begin
-        $display("free_mshr_entry_idx[%d]: %d", i, free_mshr_entry_idx[i]);
-    end
+//     $display("/*** free_mshr_entry_idx ***/");
+//     for (int i=0; i<`N_PF+1; i++) begin
+//         $display("free_mshr_entry_idx[%d]: %d", i, free_mshr_entry_idx[i]);
+//     end
 
-     $display("/*** n_mshr_avail_wires ***/");
-    for (int i=0; i<`N_MSHR+1; i++) begin
-        $display("n_mshr_avail_wires[%d]: %d", i, n_mshr_avail_wires[i]);
-    end
-end
-`endif 
+//      $display("/*** n_mshr_avail_wires ***/");
+//     for (int i=0; i<`N_MSHR+1; i++) begin
+//         $display("n_mshr_avail_wires[%d]: %d", i, n_mshr_avail_wires[i]);
+//     end
+// end
+// `endif 
 
 
 /*** determine which cache line the request should go ***/

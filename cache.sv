@@ -592,20 +592,12 @@ always_comb begin : manage_MSHR
     end
     next_mshr_table = tmp_next_3_mshr_table;
     next_n_mshr_avail = n_mshr_avail_wires[`N_MSHR];
-    // next_n_mshr_avail = n_mshr_avail + n_mshr_entry_freed_cnt - n_mshr_entry_occupied_cnt;
-    // $display("time: %d MSHR: n_mshr_entry_freed_cnt: %d", $time, n_mshr_entry_freed_cnt);
-    // $display("time: %d MSHR: n_mshr_entry_occupied_cnt: %d", $time, n_mshr_entry_occupied_cnt);
-    // `ifdef DEBUG
-    // dbg_n_mshr_entry_freed_cnt = n_mshr_entry_freed_cnt;
-    // dbg_n_mshr_entry_occupied_cnt = n_mshr_entry_occupied_cnt;
-    // `endif 
 end
 `endif
 
 
 `ifdef DEBUG
-always_ff @(negedge clock) begin
-    #3;
+always_ff @(negedge clock #3) begin
     $display("/*** next_mshr_table (0 for READ) | TIME: %d ***/", $time);
     for (int i=0; i<`N_MSHR; i++) begin
         if (next_mshr_table[i].valid) begin

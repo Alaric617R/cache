@@ -286,8 +286,10 @@ module testbench;
         print_this_cycle_state;
         $display("RESET: %d", reset);
 
-        @(negedge clock)  #3;
+
+        @(posedge clock);
         dcache_request = gen_dcache_read_request(32'h1000, BYTE, 1);
+        @(negedge clock)  #3;
         print_this_cycle_state;
         $display("RESET: %d", reset);
 

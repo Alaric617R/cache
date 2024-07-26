@@ -602,6 +602,34 @@ always_comb begin : manage_MSHR
 end
 `endif
 
+
+`ifdef DEBUG
+always_ff @(negedge clock) begin
+    #3;
+    $display("/*** next_mshr_table (0 for READ) | TIME: %d ***/", $time);
+    for (int i=0; i<`N_MSHR; i++) begin
+        if (next_mshr_table[i].valid) begin
+            $display("next_mshr_table[%d]: 
+                                        valid: %d, 
+                                        is_req: %d,
+                                        mem_op: %d, 
+                                        Dmem2proc_tag: %d, 
+                                        Dmem2proc_data: %h, 
+                                        cache_line_addr: %b,
+                                        write_content: %h", 
+                                        i, 
+                                        next_mshr_table[i].valid, 
+                                        next_mshr_table[i].is_req, 
+                                        next_mshr_table[i].mem_op, 
+                                        next_mshr_table[i].Dmem2proc_tag, 
+                                        next_mshr_table[i].Dmem2proc_data, 
+                                        next_mshr_table[i].cache_line_addr, 
+                                        next_mshr_table[i].write_content);
+        end
+    end
+end
+`endif 
+
 // `ifdef DEBUG
 // always_ff @(negedge clock) begin
 //     $display("/*** idx_wires for MSHR | TIME: %d ***/", $time);

@@ -642,6 +642,7 @@ end
 // `endif 
 
 
+
 /*** determine which cache line the request should go ***/
 `ifdef DIRECT_MAPPED
     assign dcache_req_CL_tag = dcache_request.addr[`XLEN - 1 : `N_IDX_BITS + `DC_BO];
@@ -678,24 +679,8 @@ end
 
 `endif
 
-`ifdef DEBUG
-always_ff @(negedge clock) begin
-    $display("/*** idx_wires for MSHR | TIME: %d ***/", $time);
-    for (int i=0; i<`N_MSHR; i++) begin
-        $display("idx_wires[%d]: %d", i, idx_wires[i]);
-    end
 
-    $display("/*** free_mshr_entry_idx ***/");
-    for (int i=0; i<`N_PF+1; i++) begin
-        $display("free_mshr_entry_idx[%d]: %d", i, free_mshr_entry_idx[i]);
-    end
 
-     $display("/*** n_mshr_avail_wires ***/");
-    for (int i=0; i<`N_MSHR+1; i++) begin
-        $display("n_mshr_avail_wires[%d]: %d", i, n_mshr_avail_wires[i]);
-    end
-end
-`endif 
 /*** determine if it's victim cache hit ***/
 always_comb begin : determine_victim_cache_hit
     vc_hit                  = '0;

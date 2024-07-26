@@ -601,22 +601,15 @@ always_ff @(negedge clock) begin
     $display("/*** next_mshr_table (0 for READ) | TIME: %d ***/", $time);
     for (int i=0; i<`N_MSHR; i++) begin
         if (next_mshr_table[i].valid) begin
-            $display("next_mshr_table[%d]: \
-                                        valid: %d, \
-                                        is_req: %d,\
-                                        mem_op: %d, \
-                                        Dmem2proc_tag: %d, \
-                                        Dmem2proc_data: %h, \
-                                        cache_line_addr: %b,\
-                                        write_content: %h", 
-                                        i, 
-                                        next_mshr_table[i].valid, 
-                                        next_mshr_table[i].is_req, 
-                                        next_mshr_table[i].mem_op, 
-                                        next_mshr_table[i].Dmem2proc_tag, 
-                                        next_mshr_table[i].Dmem2proc_data, 
-                                        next_mshr_table[i].cache_line_addr, 
-                                        next_mshr_table[i].write_content);
+            $write("next_mshr_table[%d]: ", i);
+            $write("  valid: %d, ", next_mshr_table[i].valid);
+            $write("  is_req: %d, ", next_mshr_table[i].is_req);
+            $write("  mem_op: %d, ", next_mshr_table[i].mem_op);
+            $write("  Dmem2proc_tag: %d, ", next_mshr_table[i].Dmem2proc_tag);
+            $write("  Dmem2proc_data: %d, ", next_mshr_table[i].Dmem2proc_data);
+            $write("  cache_line_addr: %b, ", next_mshr_table[i].cache_line_addr);
+            $write("  write_content: %h, ", next_mshr_table[i].write_content);
+            $display("");
         end
     end
 end

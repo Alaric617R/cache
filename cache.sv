@@ -547,15 +547,15 @@ always_comb begin : manage_MSHR
     issue2mem = '0;
     for (int i=0;i<`N_MSHR;i++) begin
         // highest priority: request and write operation SINCE MSHR-WRITE ENTRY CAN BE FREED UPON MEMORY RESPONSE 
-        if (tmp_next_2_mshr_table[i].valid & (tmp_next_2_mshr_table[i].Dmem2proc_tag == '0) & (tmp_next_2_mshr_table[i].mem_op == MEM_WRITE) ) begin
+        if (tmp_next_2_mshr_table[i].valid & (~tmp_next_2_mshr_table[i].Dmem2proc_tag) & (tmp_next_2_mshr_table[i].mem_op == MEM_WRITE) ) begin
             mshr_index_to_issue = i;    
             issue2mem = '1;    
             break;
-        end else if (tmp_next_2_mshr_table[i].valid & (tmp_next_2_mshr_table[i].Dmem2proc_tag == '0) & tmp_next_2_mshr_table[i].is_req) begin // read request next, should not be prefetch
+        end else if (tmp_next_2_mshr_table[i].valid & (~tmp_next_2_mshr_table[i].Dmem2proc_tag) & tmp_next_2_mshr_table[i].is_req) begin // read request next, should not be prefetch
             mshr_index_to_issue = i; 
             issue2mem = '1;        
             break;
-        end else if (tmp_next_2_mshr_table[i].valid & (tmp_next_2_mshr_table[i].Dmem2proc_tag == '0) ) begin // prefetch is of the lowest priority
+        end else if (tmp_next_2_mshr_table[i].valid & (~tmp_next_2_mshr_table[i].Dmem2proc_tag) ) begin // prefetch is of the lowest priority
             mshr_index_to_issue = i;   
             issue2mem = '1;      
             break;
@@ -598,17 +598,19 @@ end
 
 `ifdef DEBUG
 always_ff @(negedge clock) begin
+    $display("/*** issue2mem: %0d ***/", issue2mem);
+    $display("/*** mshr_index_to_issue: %0d ***/", mshr_index_to_issue);
     $display("/*** next_mshr_table (0 for READ) | TIME: %d ***/", $time);
     for (int i=0; i<`N_MSHR; i++) begin
         if (next_mshr_table[i].valid) begin
-            $write("next_mshr_table[%d]: ", i);
-            $write("  valid: %d, ", next_mshr_table[i].valid);
-            $write("  is_req: %d, ", next_mshr_table[i].is_req);
-            $write("  mem_op: %d, ", next_mshr_table[i].mem_op);
-            $write("  Dmem2proc_tag: %d, ", next_mshr_table[i].Dmem2proc_tag);
-            $write("  Dmem2proc_data: %d, ", next_mshr_table[i].Dmem2proc_data);
-            $write("  cache_line_addr: %b, ", next_mshr_table[i].cache_line_addr);
-            $write("  write_content: %h, ", next_mshr_table[i].write_content);
+            $write("next_mshr_table[%0d]: ", i);
+            $write("  valid: %0d, ", next_mshr_table[i].valid);
+            $write("  is_req: %0d, ", next_mshr_table[i].is_req);
+            $write("  mem_op: %0d, ", next_mshr_table[i].mem_op);
+            $write("  Dmem2proc_tag: %0d, ", next_mshr_table[i].Dmem2proc_tag);
+            $write("  Dmem2proc_data: %0d, ", next_mshr_table[i].Dmem2proc_data);
+            $write("  cache_line_addr: %0b, ", next_mshr_table[i].cache_line_addr);
+            $write("  write_content: %0h, ", next_mshr_table[i].write_content);
             $display("");
         end
     end

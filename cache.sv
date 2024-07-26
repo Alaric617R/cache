@@ -597,17 +597,17 @@ end
 
 
 `ifdef DEBUG
-always_ff @(negedge clock #3) begin
+always_ff @(negedge clock) begin
     $display("/*** next_mshr_table (0 for READ) | TIME: %d ***/", $time);
     for (int i=0; i<`N_MSHR; i++) begin
         if (next_mshr_table[i].valid) begin
-            $display("next_mshr_table[%d]: 
-                                        valid: %d, 
-                                        is_req: %d,
-                                        mem_op: %d, 
-                                        Dmem2proc_tag: %d, 
-                                        Dmem2proc_data: %h, 
-                                        cache_line_addr: %b,
+            $display("next_mshr_table[%d]: \
+                                        valid: %d, \
+                                        is_req: %d,\
+                                        mem_op: %d, \
+                                        Dmem2proc_tag: %d, \
+                                        Dmem2proc_data: %h, \
+                                        cache_line_addr: %b,\
                                         write_content: %h", 
                                         i, 
                                         next_mshr_table[i].valid, 

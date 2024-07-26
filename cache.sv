@@ -598,8 +598,16 @@ end
 
 `ifdef DEBUG
 always_ff @(negedge clock) begin
+    $display("/*** MSHR self print | time: %0d ***/", $time);
     $display("/*** issue2mem: %0d ***/", issue2mem);
     $display("/*** mshr_index_to_issue: %0d ***/", mshr_index_to_issue);
+    case(proc2Dmem_command)
+        BUS_LOAD: $display("proc2Dmem_command: BUS_LOAD");
+        BUS_STORE: $display("proc2Dmem_command: BUS_STORE");
+        BUS_NONE: $display("proc2Dmem_command: BUS_NONE");
+    endcase
+    $display("proc2Dmem_addr: %0b", proc2Dmem_addr);
+    $display("proc2Dmem_data: %0h", proc2Dmem_data);
     $display("/*** next_mshr_table (0 for READ) | TIME: %d ***/", $time);
     for (int i=0; i<`N_MSHR; i++) begin
         if (next_mshr_table[i].valid) begin

@@ -239,7 +239,7 @@ module testbench;
         req.size = size;
         req.valid = 1;
         req.pc = pc;
-        $display("!!!!!!!@@@@@@@\nDCACHE REQUEST GENERATED: READ addr: %0b, size: %0d, pc: %0h", addr, size, pc);
+        $display("!!!!!!!@@@@@@@ TIME: %0d\nDCACHE REQUEST GENERATED: READ addr: %0b, size: %0d, pc: %0h",$time, addr, size, pc);
         return req;
     endfunction
 

@@ -527,7 +527,6 @@ always_comb begin : manage_MSHR
 
     /** allocate new MSHR entry when there are enough MSHR free entry **/
     can_allocate_new_mshr_entry =  ( (state == READY) & (next_state == WAIT) ) | ( (state == WAIT_MSHR) & (next_state == WAIT) );
-    $display("time: %d MSHR: can_allocate_new_mshr_entry: %d", $time, can_allocate_new_mshr_entry);
     for (int i=0; i<`N_PF+1;i++) begin
         tmp_next_2_mshr_table[free_mshr_entry_idx[i]].valid = addrs2mshr[i].valid & can_allocate_new_mshr_entry;
         tmp_next_2_mshr_table[free_mshr_entry_idx[i]].is_req = (i==0)? '1:'0; // index zero is the request, the rest are prefetch
@@ -598,7 +597,9 @@ end
 
 `ifdef DEBUG
 always_ff @(negedge clock) begin
+
     $display("/*** MSHR self print | time: %0d ***/", $time);
+    $display("time: %d MSHR: can_allocate_new_mshr_entry: %d", $time, can_allocate_new_mshr_entry);
     $display("/*** issue2mem: %0d ***/", issue2mem);
     $display("/*** mshr_index_to_issue: %0d ***/", mshr_index_to_issue);
     case(proc2Dmem_command)

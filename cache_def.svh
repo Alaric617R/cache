@@ -119,6 +119,7 @@ typedef struct packed {
 typedef struct packed {
   logic valid;
   logic is_req;  // 1 if it's request by pipeline; 0 means prefetch
+  logic issued;  // 1 if it's issued to memory
   MEM_OP_T mem_op; // read(0) or write(1)
   logic [3:0] Dmem2proc_tag; // zero means no tag, also means not issued to memory yet.
   REG_DATA_T Dmem2proc_data; // data from memory

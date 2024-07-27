@@ -489,7 +489,7 @@ always_comb begin : manage_MSHR
     mshr2dcache_packet = '0;
     if (Dmem2proc_tag & (state != FLUSH) ) begin
         for (int i=0; i<`N_MSHR;i++) begin
-            if (mshr_table[i].valid & (mshr_table[i].Dmem2proc_tag == Dmem2proc_tag)) begin
+            if (mshr_table[i].valid & (mshr_table[i].Dmem2proc_tag == Dmem2proc_tag) & mshr_table[i].issued) begin
                 $display("hihihi!!!");
                 assert(mshr_table[i].mem_op == MEM_READ) else $display("MSHR: memory response tag matched with STORE operation!");
                 tmp_next_1_mshr_table[i] = '0;    // clear MSHR entry when finished
@@ -507,6 +507,7 @@ always_comb begin : manage_MSHR
             if(~tmp_next_1_mshr_table[i].valid)begin
                 tmp_next_2_mshr_table[i].valid = '1;
                 tmp_next_2_mshr_table[i].is_req = '1;
+                tmp_next_2_mshr_table[i].issued = '0;
                 tmp_next_2_mshr_table[i].mem_op = MEM_WRITE;
                 tmp_next_2_mshr_table[i].Dmem2proc_tag = '0;
                 tmp_next_2_mshr_table[i].Dmem2proc_data = vic_cache_line_evicted.block;
@@ -530,6 +531,7 @@ always_comb begin : manage_MSHR
     for (int i=0; i<`N_PF+1;i++) begin
         tmp_next_2_mshr_table[free_mshr_entry_idx[i]].valid = addrs2mshr[i].valid & can_allocate_new_mshr_entry;
         tmp_next_2_mshr_table[free_mshr_entry_idx[i]].is_req = (i==0)? '1:'0; // index zero is the request, the rest are prefetch
+        tmp_next_2_mshr_table[free_mshr_entry_idx[i]].issued = '0;
         tmp_next_2_mshr_table[free_mshr_entry_idx[i]].mem_op =  MEM_READ; // for write-back, all request needs to be loaded to cache first. Therefore even though it's store we load the cache line as load operation and write the dirty cache line in place in the cache
         tmp_next_2_mshr_table[free_mshr_entry_idx[i]].Dmem2proc_tag = '0;
         tmp_next_2_mshr_table[free_mshr_entry_idx[i]].Dmem2proc_data = '0;
@@ -546,15 +548,15 @@ always_comb begin : manage_MSHR
     issue2mem = '0;
     for (int i=0;i<`N_MSHR;i++) begin
         // highest priority: request and write operation SINCE MSHR-WRITE ENTRY CAN BE FREED UPON MEMORY RESPONSE 
-        if (tmp_next_2_mshr_table[i].valid & (~tmp_next_2_mshr_table[i].Dmem2proc_tag) & (tmp_next_2_mshr_table[i].mem_op == MEM_WRITE) ) begin
+        if (tmp_next_2_mshr_table[i].valid & (~tmp_next_2_mshr_table[i].issued) & (tmp_next_2_mshr_table[i].mem_op == MEM_WRITE) ) begin
             mshr_index_to_issue = i;    
             issue2mem = '1;    
             break;
-        end else if (tmp_next_2_mshr_table[i].valid & (~tmp_next_2_mshr_table[i].Dmem2proc_tag) & tmp_next_2_mshr_table[i].is_req) begin // read request next, should not be prefetch
+        end else if (tmp_next_2_mshr_table[i].valid & (~tmp_next_2_mshr_table[i].issued) & tmp_next_2_mshr_table[i].is_req) begin // read request next, should not be prefetch
             mshr_index_to_issue = i; 
             issue2mem = '1;        
             break;
-        end else if (tmp_next_2_mshr_table[i].valid & (~tmp_next_2_mshr_table[i].Dmem2proc_tag) ) begin // prefetch is of the lowest priority
+        end else if (tmp_next_2_mshr_table[i].valid & (~tmp_next_2_mshr_table[i].issued) ) begin // prefetch is of the lowest priority
             mshr_index_to_issue = i;   
             issue2mem = '1;      
             break;
@@ -569,6 +571,7 @@ always_comb begin : manage_MSHR
         proc2Dmem_addr = tmp_next_2_mshr_table[mshr_index_to_issue].cache_line_addr;
         proc2Dmem_data = tmp_next_2_mshr_table[mshr_index_to_issue].write_content; 
         // wait response from memory
+        tmp_next_3_mshr_table[mshr_index_to_issue].issued = '1;
         tmp_next_3_mshr_table[mshr_index_to_issue].Dmem2proc_tag = Dmem2proc_response;
         // if it's store, upon memory response, free the entry immediately
         if ( (tmp_next_2_mshr_table[mshr_index_to_issue].mem_op == MEM_WRITE) & (Dmem2proc_response) )begin

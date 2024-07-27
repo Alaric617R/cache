@@ -577,8 +577,6 @@ always_comb begin : manage_MSHR
         end
     end else begin
         proc2Dmem_command = BUS_NONE;
-        $display("time: %d MSHR: nothing to issue to memory", $time);
-
     end
 
     /** update mshr free entry count and final version of next_mshr_table**/
@@ -602,6 +600,10 @@ always_ff @(negedge clock) begin
     $display("time: %d MSHR: can_allocate_new_mshr_entry: %d", $time, can_allocate_new_mshr_entry);
     $display("/*** issue2mem: %0d ***/", issue2mem);
     $display("/*** mshr_index_to_issue: %0d ***/", mshr_index_to_issue);
+    $display("/*** MEMORY ***");
+    $display("Dmem2proc_response: %0d", Dmem2proc_response);
+    $display("Dmem2proc_tag: %0d", Dmem2proc_tag);
+    $display("Dmem2proc_data: %0h", Dmem2proc_data);
     case(proc2Dmem_command)
         BUS_LOAD: $display("proc2Dmem_command: BUS_LOAD");
         BUS_STORE: $display("proc2Dmem_command: BUS_STORE");

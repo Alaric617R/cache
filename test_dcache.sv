@@ -295,6 +295,7 @@ module testbench;
         $display("RESET: %d", reset);
 
         @(negedge clock)  #3;
+        dcache_request = '0;
         print_this_cycle_state;
         $display("RESET: %d", reset);
 

@@ -285,13 +285,24 @@ end
 `ifdef DEBUG
 always_ff @(negedge clock) begin
     $display("/*** MAIN CACHE DEBUG | TIME: %0d ***/", $time);
+    if (dcache_request.valid) begin
+        $write("dcache_request: VALID  ");
+        $display("mem_op: %0d  addr: %0b  size: %0d", dcache_request.mem_op, dcache_request.addr, dcache_request.size);
+    end else begin
+        $display("dcache_request: INVALID");
+    end
     case(dbg_main_cache_response_case)
         HIT: $display("MAIN_CACHE_STATE: HIT");
         HIT_ON_MSHR_TABLE: $display("MAIN_CACHE_STATE: HIT_ON_MSHR_TABLE");
         HIT_ON_MSHR_PKT: $display("MAIN_CACHE_STATE: HIT_ON_MSHR_PKT");
         FWD_FROM_MSHR_PKT: $display("MAIN_CACHE_STATE: FWD_FROM_MSHR_PKT");
     endcase
-    $display("state: %0d", state);
+    case(state)
+        READY: $display("STATE: READY");
+        WAIT: $display("STATE: WAIT");
+        WAIT_MSHR: $display("STATE: WAIT_MSHR");
+        FLUSH: $display("STATE: FLUSH");
+    endcase
     $display("mshr_real_hit: %0d  mshr_hit_index: %0d", mshr_real_hit, mshr_hit_index);
     $display("cache_hit: %0d  main_cache_hit: %0d  vc_hit: %0d", cache_hit, main_cache_hit, vc_hit);
     $display("needd_to_evict: %0d", need_to_evict);
@@ -308,7 +319,7 @@ always_ff @(negedge clock) begin
 
 
     for (int i=0; i<`N_CL; i++) begin
-        $write("next_main_cache_lines[%0d]: %0b", i, next_main_cache_lines[i]);
+        $write("next_main_cache_lines[%0d] ", i);
         $display(" addr: %0b, tag: %0b, dirty: %0d\n", next_main_cache_lines[i].addr, next_main_cache_lines[i].tag, next_main_cache_lines[i].dirty);
     end
 end

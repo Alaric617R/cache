@@ -190,7 +190,7 @@ always_comb begin : manage_main_cache
     mshr2dcache_packet_USED = '0;
     dbg_main_cache_response_case ='0;
     // cache hit (NO NEED TO ALLOCATE NEW CACHE LINE!) (mshr real hit dealt in another case)
-    if (state == READY & main_cache_hit) begin
+    if ((state == READY) & main_cache_hit) begin
         dbg_main_cache_response_case = HIT;
         if (dcache_request.mem_op == MEM_READ) begin // FOR LOAD
             `ifdef TWO_WAY_SET_ASSOCIATIVE
@@ -283,7 +283,7 @@ end
 `endif 
 
 `ifdef DEBUG
-always_ff @(negedge clock) begin
+always_comb begin
     $display("/*** MAIN CACHE DEBUG | TIME: %0d ***/", $time);
     if (dcache_request.valid) begin
         $write("dcache_request: VALID  ");

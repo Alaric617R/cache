@@ -103,6 +103,7 @@ module testbench;
                 $write("MSHR_ENTRY[%0d]:", i);
                 $write("  valid: %0d", dbg_mshr_table[i].valid);
                 $write("  is_req: %0d", dbg_mshr_table[i].is_req);
+                $write("  issued: %0d", dbg_mshr_table[i].issued);
                 $write("  mem_op: %0d", dbg_mshr_table[i].mem_op);
                 $write("  Dmem2proc_tag: %0d", dbg_mshr_table[i].Dmem2proc_tag);
                 $write("  Dmem2proc_data: %0h", dbg_mshr_table[i].Dmem2proc_data);

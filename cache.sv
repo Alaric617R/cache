@@ -620,6 +620,7 @@ always_ff @(negedge clock) begin
             $write("next_mshr_table[%0d]: ", i);
             $write("  valid: %0d, ", next_mshr_table[i].valid);
             $write("  is_req: %0d, ", next_mshr_table[i].is_req);
+            $write("  issued: %0d, ", next_mshr_table[i].issued);
             $write("  mem_op: %0d, ", next_mshr_table[i].mem_op);
             $write("  Dmem2proc_tag: %0d, ", next_mshr_table[i].Dmem2proc_tag);
             $write("  Dmem2proc_data: %0d, ", next_mshr_table[i].Dmem2proc_data);

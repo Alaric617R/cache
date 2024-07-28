@@ -320,7 +320,7 @@ always_comb begin
 
     for (int i=0; i<`N_CL; i++) begin
         $write("next_main_cache_lines[%0d] ", i);
-        $display(" addr: %0b, tag: %0b, dirty: %0d\n", next_main_cache_lines[i].addr, next_main_cache_lines[i].tag, next_main_cache_lines[i].dirty);
+        $display("valid: %0d addr: %0b, tag: %0b, dirty: %0d\n", next_main_cache_lines[i].valid, next_main_cache_lines[i].addr, next_main_cache_lines[i].tag, next_main_cache_lines[i].dirty);
     end
 end
 `endif 

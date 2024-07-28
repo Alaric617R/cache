@@ -183,15 +183,15 @@ logic need_to_evict_MSHR_real_hit;
 `ifdef DIRECT_MAPPED
 
 
-DBG_MAIN_CACHE_STATE_T dbg_main_cache_response_case;
+DBG_MAIN_CACHE_STATE_T main_cache_response_case;
 
 always_comb begin : manage_main_cache
     next_main_cache_lines = main_cache_lines;
     mshr2dcache_packet_USED = '0;
-    dbg_main_cache_response_case ='0;
+    main_cache_response_case = NONE;
     // cache hit (NO NEED TO ALLOCATE NEW CACHE LINE!) (mshr real hit dealt in another case)
     if (  (main_cache_hit==1'b1) && (state == READY) ) begin
-        dbg_main_cache_response_case = HIT;
+        main_cache_response_case = HIT;
         if (dcache_request.mem_op == MEM_READ) begin // FOR LOAD
             `ifdef TWO_WAY_SET_ASSOCIATIVE
                 // update lru
@@ -210,14 +210,14 @@ always_comb begin : manage_main_cache
             endcase
         end
     end else if ( (state == READY) & mshr_real_hit & ~main_cache_hit & ~vc_hit & mshr_table[mshr_hit_index].mem_op == MEM_WRITE) begin /** Data forwarded from MSHR table **/
-                dbg_main_cache_response_case = HIT_ON_MSHR_TABLE;
+                main_cache_response_case = HIT_ON_MSHR_TABLE;
                 // special case: dirty cache line in MSHR is hit by load/store
                 next_main_cache_lines[cache_line_index_for_MSHR_real_hit].valid = '1;
                 next_main_cache_lines[cache_line_index_for_MSHR_real_hit].block = mshr_table[mshr_hit_index].write_content;
                 next_main_cache_lines[cache_line_index_for_MSHR_real_hit].dirty = '0;
                 next_main_cache_lines[cache_line_index_for_MSHR_real_hit].tag   = mshr_table[mshr_hit_index].cache_line_addr[`XLEN-1:`XLEN-`DC_TAG_LEN];
                 `ifdef DEBUG 
-                next_main_cache_lines[cache_line_index_for_MSHR_real_hit].addr  = mshr_table[mshr_hit_index].cache_line_addr;
+                    next_main_cache_lines[cache_line_index_for_MSHR_real_hit].addr  = mshr_table[mshr_hit_index].cache_line_addr;
                 `endif 
                 if (need_to_evict_MSHR_real_hit) begin
                     // transmit evicted cache line to victim cache
@@ -233,7 +233,7 @@ always_comb begin : manage_main_cache
                     endcase
                 end
     end else if (state == READY & mshr_real_hit & ~main_cache_hit & ~vc_hit & mshr_table[mshr_hit_index].mem_op == MEM_READ) begin /** Data forwarded from MSHR broadcast packet **/
-            dbg_main_cache_response_case = HIT_ON_MSHR_PKT;
+            main_cache_response_case = HIT_ON_MSHR_PKT;
             mshr2dcache_packet_USED = '1; // !used for simplifying the code
             next_main_cache_lines[cache_line_index_for_new_data].valid = '1;
             next_main_cache_lines[cache_line_index_for_new_data].block = mshr2dcache_packet.Dmem2proc_data;
@@ -259,14 +259,14 @@ always_comb begin : manage_main_cache
     
     // cache miss, response from MSHR
     if (~mshr2dcache_packet_USED & mshr2dcache_packet.valid & mshr2dcache_packet.mem_op == MEM_READ) begin /** Date forwarded from MSHR-memory response packet **/
-        dbg_main_cache_response_case = FWD_FROM_MSHR_PKT;
+        main_cache_response_case = FWD_FROM_MSHR_PKT;
         if (~need_to_evict | (need_to_evict & mshr2dcache_packet.is_req) ) begin
             next_main_cache_lines[cache_line_index_for_new_data].valid = '1;
             next_main_cache_lines[cache_line_index_for_new_data].block = mshr2dcache_packet.Dmem2proc_data;
             next_main_cache_lines[cache_line_index_for_new_data].dirty = '0;
             next_main_cache_lines[cache_line_index_for_new_data].tag   = mshr2dcache_packet.cache_line_addr[`XLEN-1:`XLEN-`DC_TAG_LEN];
             `ifdef DEBUG 
-                next_main_cache_lines[cache_line_index_for_MSHR_real_hit].addr  = mshr2dcache_packet.cache_line_addr;
+                next_main_cache_lines[cache_line_index_for_new_data].addr  = mshr2dcache_packet.cache_line_addr;
             `endif 
         end
         if (need_to_evict) begin
@@ -291,7 +291,8 @@ always_comb begin
     end else begin
         $display("dcache_request: INVALID");
     end
-    case(dbg_main_cache_response_case)
+    case(main_cache_response_case)
+        NONE: $display("MAIN_CACHE_STATE: NONE");
         HIT: $display("MAIN_CACHE_STATE: HIT");
         HIT_ON_MSHR_TABLE: $display("MAIN_CACHE_STATE: HIT_ON_MSHR_TABLE");
         HIT_ON_MSHR_PKT: $display("MAIN_CACHE_STATE: HIT_ON_MSHR_PKT");
@@ -537,13 +538,17 @@ always_comb begin : manage_MSHR
         end
     end
 
+    /*** hit on dirty mshr table entry, remove that entry to main cache ***/
+    if (main_cache_response_case == HIT_ON_MSHR_TABLE) begin
+        tmp_next_1_mshr_table[mshr_hit_index].valid = '0;
+    end
+
     /** deal with memory responses and free MSHR entry when STATE IS NOT FLUSH **/
     mshr2dcache_packet = '0;
     if ((Dmem2proc_tag != 0) & (state != FLUSH) ) begin
         for (int i=0; i<`N_MSHR;i++) begin
             if (mshr_table[i].valid) $display("i: %0d mshr: %0b [%0d], dmemtag: %0b [%0d] issued: %0b",i,mshr_table[i].Dmem2proc_tag,mshr_table[i].Dmem2proc_tag, Dmem2proc_tag,Dmem2proc_tag,mshr_table[i].issued) ;
             if (mshr_table[i].valid & (mshr_table[i].Dmem2proc_tag == Dmem2proc_tag) & mshr_table[i].issued) begin
-                $display("hihihi!!!");
                 assert(mshr_table[i].mem_op == MEM_READ) else $display("MSHR: memory response tag matched with STORE operation!");
                 tmp_next_1_mshr_table[i] = '0;    // clear MSHR entry when finished
                 mshr2dcache_packet = mshr_table[i];

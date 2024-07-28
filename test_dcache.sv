@@ -216,7 +216,7 @@ module testbench;
 
     task print_dcache_response;
         $display("/*** DCACHE RESPONSE ***/");
-        $display("  reg_data: %0h", dcache_response.reg_data);
+        $display("  reg_data: %0d", dcache_response.reg_data);
         $display("  valid: %0d", dcache_response.valid);
     endtask
 
@@ -229,6 +229,7 @@ module testbench;
             WAIT_MSHR : $display("STATE: WAIT_MSHR");
             FLUSH: $display("STATE: FLUSH");
         endcase
+        print_dcache_response;
         print_mem_bus;
         print_regs;
         print_combs;

@@ -214,6 +214,12 @@ module testbench;
         end
     endtask
 
+    task print_dcache_response;
+        $display("/*** DCACHE RESPONSE ***/");
+        $display("  reg_data: %0h", dcache_response.reg_data);
+        $display("  valid: %0d", dcache_response.valid);
+    endtask
+
     task print_this_cycle_state;
         $display("/********************* THIS CYCLE STATE *********************/");
         $display("/* TIME: %d */", $time);
@@ -295,7 +301,6 @@ module testbench;
         $display("RESET: %d", reset);
 
         @(negedge clock)  #3;
-        dcache_request = '0;
         print_this_cycle_state;
         $display("RESET: %d", reset);
 

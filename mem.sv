@@ -175,7 +175,7 @@ module mem (
 	// Initialise the entire memory
 	initial begin
 		for(int i=0; i<`MEM_64BIT_LINES; i=i+1) begin
-			unified_memory[i] = 64'h1;
+			unified_memory[i] = i;
 		end
 		mem2proc_data=64'bx;
 		mem2proc_tag=4'd0;

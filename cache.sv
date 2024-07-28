@@ -190,7 +190,7 @@ always_comb begin : manage_main_cache
     mshr2dcache_packet_USED = '0;
     dbg_main_cache_response_case ='0;
     // cache hit (NO NEED TO ALLOCATE NEW CACHE LINE!) (mshr real hit dealt in another case)
-    if ((state == READY) & main_cache_hit) begin
+    if (  (main_cache_hit==1'b1) && (state == READY) ) begin
         dbg_main_cache_response_case = HIT;
         if (dcache_request.mem_op == MEM_READ) begin // FOR LOAD
             `ifdef TWO_WAY_SET_ASSOCIATIVE
@@ -209,7 +209,7 @@ always_comb begin : manage_main_cache
                 WORD: next_main_cache_lines[main_cache_hit_index].block.word_level[dcache_request.addr[2:2]] = dcache_request.write_content[31:0];
             endcase
         end
-    end else if (state == READY & mshr_real_hit & ~main_cache_hit & ~vc_hit & mshr_table[mshr_hit_index].mem_op == MEM_WRITE) begin /** Data forwarded from MSHR table **/
+    end else if ( (state == READY) & mshr_real_hit & ~main_cache_hit & ~vc_hit & mshr_table[mshr_hit_index].mem_op == MEM_WRITE) begin /** Data forwarded from MSHR table **/
                 dbg_main_cache_response_case = HIT_ON_MSHR_TABLE;
                 // special case: dirty cache line in MSHR is hit by load/store
                 next_main_cache_lines[cache_line_index_for_MSHR_real_hit].valid = '1;

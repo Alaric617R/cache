@@ -34,7 +34,7 @@ typedef enum logic [1:0] {
 typedef enum logic [1:0] { READY, WAIT, WAIT_MSHR, FLUSH } DC_STATE_T;
 
 // for main cache debug
-typedef enum logic [1:0] { NONE, HIT, HIT_ON_MSHR_TABLE, HIT_ON_MSHR_PKT, FWD_FROM_MSHR_PKT} DBG_MAIN_CACHE_STATE_T;
+typedef enum logic [3:0] { NONE, HIT, HIT_ON_MSHR_TABLE, HIT_ON_MSHR_PKT, FWD_FROM_MSHR_PKT} DBG_MAIN_CACHE_STATE_T;
 
 // associativity
 `define DIRECT_MAPPED

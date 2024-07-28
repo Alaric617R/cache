@@ -181,11 +181,17 @@ logic need_to_evict_MSHR_real_hit;
 `endif 
 
 `ifdef DIRECT_MAPPED
+
+
+DBG_MAIN_CACHE_STATE_T dbg_main_cache_response_case;
+
 always_comb begin : manage_main_cache
     next_main_cache_lines = main_cache_lines;
     mshr2dcache_packet_USED = '0;
+    dbg_main_cache_response_case ='0;
     // cache hit (NO NEED TO ALLOCATE NEW CACHE LINE!) (mshr real hit dealt in another case)
     if (state == READY & main_cache_hit) begin
+        dbg_main_cache_response_case = HIT;
         if (dcache_request.mem_op == MEM_READ) begin // FOR LOAD
             `ifdef TWO_WAY_SET_ASSOCIATIVE
                 // update lru
@@ -204,6 +210,7 @@ always_comb begin : manage_main_cache
             endcase
         end
     end else if (state == READY & mshr_real_hit & ~main_cache_hit & ~vc_hit & mshr_table[mshr_hit_index].mem_op == MEM_WRITE) begin /** Data forwarded from MSHR table **/
+                dbg_main_cache_response_case = HIT_ON_MSHR_TABLE;
                 // special case: dirty cache line in MSHR is hit by load/store
                 next_main_cache_lines[cache_line_index_for_MSHR_real_hit].valid = '1;
                 next_main_cache_lines[cache_line_index_for_MSHR_real_hit].block = mshr_table[mshr_hit_index].write_content;
@@ -226,6 +233,7 @@ always_comb begin : manage_main_cache
                     endcase
                 end
     end else if (state == READY & mshr_real_hit & ~main_cache_hit & ~vc_hit & mshr_table[mshr_hit_index].mem_op == MEM_READ) begin /** Data forwarded from MSHR broadcast packet **/
+            dbg_main_cache_response_case = HIT_ON_MSHR_PKT;
             mshr2dcache_packet_USED = '1; // !used for simplifying the code
             next_main_cache_lines[cache_line_index_for_new_data].valid = '1;
             next_main_cache_lines[cache_line_index_for_new_data].block = mshr2dcache_packet.Dmem2proc_data;
@@ -251,6 +259,7 @@ always_comb begin : manage_main_cache
     
     // cache miss, response from MSHR
     if (~mshr2dcache_packet_USED & mshr2dcache_packet.valid & mshr2dcache_packet.mem_op == MEM_READ) begin /** Date forwarded from MSHR-memory response packet **/
+        dbg_main_cache_response_case = FWD_FROM_MSHR_PKT;
         if (~need_to_evict | (need_to_evict & mshr2dcache_packet.is_req) ) begin
             next_main_cache_lines[cache_line_index_for_new_data].valid = '1;
             next_main_cache_lines[cache_line_index_for_new_data].block = mshr2dcache_packet.Dmem2proc_data;
@@ -271,6 +280,38 @@ always_comb begin : manage_main_cache
 end
 `elsif  TWO_WAY_SET_ASSOCIATIVE
 
+`endif 
+
+`ifdef DEBUG
+always_ff @(negedge clock) begin
+    $display("/*** MAIN CACHE DEBUG | TIME: %0d ***/", $time);
+    case(dbg_main_cache_response_case)
+        HIT: $display("MAIN_CACHE_STATE: HIT");
+        HIT_ON_MSHR_TABLE: $display("MAIN_CACHE_STATE: HIT_ON_MSHR_TABLE");
+        HIT_ON_MSHR_PKT: $display("MAIN_CACHE_STATE: HIT_ON_MSHR_PKT");
+        FWD_FROM_MSHR_PKT: $display("MAIN_CACHE_STATE: FWD_FROM_MSHR_PKT");
+    endcase
+    $display("state: %0d", state);
+    $display("mshr_real_hit: %0d  mshr_hit_index: %0d", mshr_real_hit, mshr_hit_index);
+    $display("cache_hit: %0d  main_cache_hit: %0d  vc_hit: %0d", cache_hit, main_cache_hit, vc_hit);
+    $display("needd_to_evict: %0d", need_to_evict);
+    $display("cache_line_index_for_new_data: %0d", cache_line_index_for_new_data);
+    $display("main_cache_hit: %0d  main_cache_hit_index: %0d", main_cache_hit,main_cache_hit_index);
+    $display("mshr2dcache_packet_USED: %0b", mshr2dcache_packet_USED);
+    $display("cache_line_index_for_MSHR_real_hit: %0d", cache_line_index_for_MSHR_real_hit);
+    $display("need_to_evict_MSHR_real_hit: %0d", need_to_evict_MSHR_real_hit);
+    if (main_cache_line_evicted.valid) begin
+        $write("main_cache_line_evicted: VALID  ");
+        $display(" addr: %0b, tag: %0b, dirty: %0d\n", main_cache_line_evicted.addr, main_cache_line_evicted.tag, main_cache_line_evicted.dirty);
+        $display("main_cache_line_evicted_addr: %b", main_cache_line_evicted_addr);
+    end
+
+
+    for (int i=0; i<`N_CL; i++) begin
+        $write("next_main_cache_lines[%0d]: %0b", i, next_main_cache_lines[i]);
+        $display(" addr: %0b, tag: %0b, dirty: %0d\n", next_main_cache_lines[i].addr, next_main_cache_lines[i].tag, next_main_cache_lines[i].dirty);
+    end
+end
 `endif 
 
 /*** manage victim cache ***/

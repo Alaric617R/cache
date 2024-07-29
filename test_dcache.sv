@@ -289,11 +289,11 @@ module testbench;
 
         for (int i=0; i<`N_CL; i++) begin
             $write("NEXT_MAIN_CACHE_LINE[%0d]:", i);
-            $write("  addr: %0b", dbg_main_cache_line_upon_hit[i].addr);
-            $write("  valid: %0d", dbg_main_cache_line_upon_hit[i].valid);
-            $write("  dirty: %0d", dbg_main_cache_line_upon_hit[i].dirty);
-            $write("  tag: %0b", dbg_main_cache_line_upon_hit[i].tag);
-            $write("  block: %0d", dbg_main_cache_line_upon_hit[i].block);
+            $write("  addr: %0b", dbg_next_main_cache_lines[i].addr);
+            $write("  valid: %0d", dbg_next_main_cache_lines[i].valid);
+            $write("  dirty: %0d", dbg_next_main_cache_lines[i].dirty);
+            $write("  tag: %0b", dbg_next_main_cache_lines[i].tag);
+            $write("  block: %0d", dbg_next_main_cache_lines[i].block);
             $write("\n");
         end
     endtask

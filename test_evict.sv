@@ -327,33 +327,29 @@ module testbench;
 
         @(negedge clock)  #3;
         print_this_cycle_state;
-        
+
+
+        @(negedge clock)  #3;
+        print_this_cycle_state;
+
+        @(negedge clock)  #3;
+        print_this_cycle_state;
+
         @(posedge clock);
-        dcache_request = gen_dcache_write_request(32'h1020, HALF, 32'd66, 1); // mshr hit
-
+        dcache_request = gen_dcache_read_request(32'h1020, HALF, 32'd66, 1); // mshr hit
+        @(negedge clock)  #3;
         print_this_cycle_state;
 
 
         @(negedge clock)  #3;
         print_this_cycle_state;
 
-        @(negedge clock)  #3;
-        print_this_cycle_state;
 
-        
-        @(negedge clock)  #3;
-        print_this_cycle_state;
-
-                
-        @(negedge clock)  #3;
-        print_this_cycle_state;
-
-                
         @(negedge clock)  #3;
         print_this_cycle_state;
 
 
-        
+
         $finish;
  end
 

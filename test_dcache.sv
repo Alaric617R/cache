@@ -281,6 +281,7 @@ module testbench;
         req.write_content = write_content;
         req.valid = 1;
         req.pc = pc;
+        $display("!!!!!!!@@@@@@@ TIME: %0d\nDCACHE REQUEST GENERATED: WRITE addr: %0b, size: %0d, write_content: %0d, pc: %0h",$time, addr, size, write_content, pc);
         return req;
     endfunction
 
@@ -327,7 +328,7 @@ module testbench;
         @(negedge clock)  #3;
 
         @(posedge clock);
-        dcache_request = gen_dcache_write_request(32'h1018, HALF, 32'd66, 1); // mshr hit
+        dcache_request = gen_dcache_write_request(32'h1018, HALF, 32'd66, 1); // mshr pkt hit
 
         print_this_cycle_state;
 

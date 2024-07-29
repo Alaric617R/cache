@@ -110,7 +110,7 @@ typedef struct packed {
 } VICTIM_CACHE_LINE;
 
 // number of CLs to prefetch
-`define N_PF 1
+`define N_PF 2
 
 typedef struct packed {
     logic valid;

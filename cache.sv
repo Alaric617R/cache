@@ -39,7 +39,8 @@ module dcache(
     input logic done,
     output logic flush_finished
 
-    `ifdef DEBUG,   
+    `ifdef DEBUG,
+        // registers
         output CACHE_LINE [`N_CL-1 : 0] dbg_main_cache_lines,
         output VICTIM_CACHE_LINE [`N_VC_CL-1 : 0] dbg_victim_cache_lines,
         output logic [$clog2(`N_VC_CL) : 0] dbg_n_vc_avail,
@@ -49,9 +50,66 @@ module dcache(
         output DCACHE_REQUEST  dbg_dcache_request_on_wait,
         output logic [$clog2(`N_MSHR):0] dbg_n_mshr_entry_freed_cnt,
         output logic [$clog2(`N_MSHR):0] dbg_n_mshr_entry_occupied_cnt,
-        output MSHR_ENTRY dbg_mshr2dcache_packet,
-        output VICTIM_CACHE_LINE dbg_vic_cache_line_evicted,
-        output MEM_ADDR_T dbg_main_cache_line_evicted_addr
+        // registers peripherals
+        output CACHE_LINE [`N_CL-1 : 0] dbg_next_main_cache_lines,
+        output VICTIM_CACHE_LINE [`N_VC_CL-1 : 0] dbg_next_victim_cache_lines,
+        output logic [$clog2(`N_VC_CL) : 0] dbg_next_n_vc_avail,
+        output MSHR_ENTRY [`N_MSHR-1 : 0] dbg_next_mshr_table,
+        output logic [$clog2(`N_MSHR) : 0] dbg_next_n_mshr_avail,
+        output DC_STATE_T dbg_next_state,
+        output DCACHE_REQUEST  dbg_next_dcache_request_on_wait,
+        // combinationals
+        output logic dbg_cache_hit,
+        output logic dbg_main_cache_hit,
+        output logic [`N_IDX_BITS:0] dbg_main_cache_hit_index,
+        output logic dbg_vc_hit,
+        output logic [$clog2(`N_VC_CL) : 0] dbg_vc_hit_index,
+        output logic dbg_mshr_hit,
+        output logic dbg_mshr_real_hit,
+        output logic [$clog2(`N_MSHR): 0]  dbg_mshr_hit_index,
+        output logic dbg_request_finished,
+        // commuication wires
+        output MSHR_ENTRY dbg_mshr2dcache_packet,  // when a memory response comes in, erase matched MSHR entry and transfer that cache line to main cache/victim cache
+        output VICTIM_CACHE_LINE dbg_vic_cache_line_evicted,  // must be from victim cache to MSHR
+        output CACHE_LINE dbg_main_cache_line_evicted, // from main cache to victim cache
+        output MEM_ADDR_T dbg_main_cache_line_evicted_addr, // address of CL evicted from main cache
+        output CACHE_LINE dbg_main_cache_line_upon_hit, // cache line hit at main cache
+        output VICTIM_CACHE_LINE dbg_vic_cache_line_upon_hit, //cache line hit at victim cache
+        // main cache related
+        output logic [$clog2(`N_CL):0] dbg_cache_line_index_for_new_data,
+        output logic dbg_need_to_evict,
+        output logic dbg_mshr2dcache_packet_USED,
+        output logic dbg_loaded_CL_same_addr_as_evicted_CL,
+        output logic [$clog2(`N_CL):0] dbg_cache_line_index_for_MSHR_real_hit,
+        output logic dbg_need_to_evict_MSHR_real_hit,
+        output DBG_MAIN_CACHE_STATE_T dbg_main_cache_response_case,
+        // victim cache related
+        output logic dbg_vc_need_evict,
+        output VICTIM_CACHE_LINE dbg_vc_CL_evicted,
+        output logic [$clog2(`N_VC_CL) : 0] dbg_vc_CL_evicted_index,
+        output logic [$clog2(`N_VC_CL) : 0] dbg_vc_free_index,
+        output logic [$clog2(`N_VC_CL) : 0] dbg_current_smallest_index,
+        output logic [$clog2(`N_VC_CL) : 0] dbg_current_smallest_lru,
+        output logic [$clog2(`N_VC_CL) : 0] dbg_index_selector,
+        // dcache response related
+        // MSHR related
+        output PREFETCH_ADDR_T [`N_PF:0] dbg_addrs2mshr,
+        output MEM_ADDR_T dbg_base_addr,
+        output logic [`N_PF:0] [$clog2(`N_MSHR):0]   dbg_free_mshr_entry_idx,
+        output logic [`N_MSHR:0] [`N_PF:0] dbg_idx_wires,
+        output logic [$clog2(`N_MSHR):0] dbg_mshr_index_to_issue,
+        output logic [$clog2(`N_MSHR):0] dbg_mshr_index_to_issue_hi_priority,
+        output logic [$clog2(`N_MSHR):0] dbg_mshr_index_to_issue_mid_priority,
+        output logic [$clog2(`N_MSHR):0] dbg_mshr_index_to_issue_low_priority,
+        output logic dbg_high_priority_exist,
+        output logic dbg_mid_priority_exist,
+        output logic dbg_low_priority_exist,
+        output logic dbg_issue2mem,
+        output logic dbg_can_allocate_new_mshr_entry,
+        output MSHR_ENTRY [`N_MSHR - 1 : 0] dbg_tmp_next_1_mshr_table,
+        output MSHR_ENTRY [`N_MSHR - 1 : 0] dbg_tmp_next_2_mshr_table,
+        output MSHR_ENTRY [`N_MSHR - 1 : 0] dbg_tmp_next_3_mshr_table,
+        output logic [`N_MSHR:0] [$clog2(`N_MSHR):0]  dbg_n_mshr_avail_wires
 
 
     `endif
@@ -297,7 +355,7 @@ end
 
 `endif 
 
-`ifdef DEBUG
+`ifdef DEBUG_COMBS
 always_comb begin
     $display("/*** MAIN CACHE DEBUG | TIME: %0d ***/", $time);
     if (dcache_request.valid) begin
@@ -496,6 +554,7 @@ function  addr_not_in_MSHR_packet(MEM_ADDR_T addr);
     if (mshr2dcache_packet.cache_line_addr == addr) return 0;
     else return 1;
 endfunction
+
 PREFETCH_ADDR_T [`N_PF:0] addrs2mshr;
 MEM_ADDR_T base_addr; // address of the memory request
 /** modify addrs2mshr **/
@@ -534,6 +593,12 @@ end
 
 // index of MSHR entry that can be issued to memory
 logic [$clog2(`N_MSHR):0] mshr_index_to_issue;
+logic [$clog2(`N_MSHR):0] mshr_index_to_issue_hi_priority;
+logic [$clog2(`N_MSHR):0] mshr_index_to_issue_mid_priority;
+logic [$clog2(`N_MSHR):0] mshr_index_to_issue_low_priority;
+logic high_priority_exist;
+logic mid_priority_exist;
+logic low_priority_exist;
 logic issue2mem;
 logic can_allocate_new_mshr_entry;
 // connecting wires for renaming
@@ -554,6 +619,7 @@ always_comb begin : manage_MSHR
     tmp_next_1_mshr_table   = mshr_table;
     next_n_mshr_avail       = n_mshr_avail;
     n_mshr_avail_wires      = '0;
+    mshr2dcache_packet = '0;
 
 
     
@@ -570,7 +636,6 @@ always_comb begin : manage_MSHR
     end
 
     /** deal with memory responses and free MSHR entry when STATE IS NOT FLUSH **/
-    mshr2dcache_packet = '0;
     if ((Dmem2proc_tag != 0) & (state != FLUSH) ) begin
         for (int i=0; i<`N_MSHR;i++) begin
             if (mshr_table[i].valid) $display("i: %0d mshr: %0b [%0d], dmemtag: %0b [%0d] issued: %0b",i,mshr_table[i].Dmem2proc_tag,mshr_table[i].Dmem2proc_tag, Dmem2proc_tag,Dmem2proc_tag,mshr_table[i].issued) ;
@@ -634,22 +699,46 @@ always_comb begin : manage_MSHR
     // find the most proper index to issue
     tmp_next_3_mshr_table = tmp_next_2_mshr_table;    // for signal renaming
     mshr_index_to_issue = '0;
+    mshr_index_to_issue_hi_priority = '0;
+    mshr_index_to_issue_mid_priority = '0;
+    mshr_index_to_issue_low_priority = '0;
+    high_priority_exist = '0;
+    mid_priority_exist = '0;
+    low_priority_exist = '0;
     issue2mem = '0;
     for (int i=0;i<`N_MSHR;i++) begin
         // highest priority: request and write operation SINCE MSHR-WRITE ENTRY CAN BE FREED UPON MEMORY RESPONSE 
         if (tmp_next_2_mshr_table[i].valid & (~tmp_next_2_mshr_table[i].issued) & (tmp_next_2_mshr_table[i].mem_op == MEM_WRITE) ) begin
-            mshr_index_to_issue = i;
-            issue2mem = '1;
-            break;
-        end else if (tmp_next_2_mshr_table[i].valid & (~tmp_next_2_mshr_table[i].issued) & tmp_next_2_mshr_table[i].is_req) begin // read request next, should not be prefetch
-            mshr_index_to_issue = i;
-            issue2mem = '1;
-            break;
-        end else if (tmp_next_2_mshr_table[i].valid & (~tmp_next_2_mshr_table[i].issued) ) begin // prefetch is of the lowest priority
-            mshr_index_to_issue = i;
+            mshr_index_to_issue_hi_priority = i;
+            high_priority_exist = '1;
             issue2mem = '1;
             break;
         end
+    end
+    for (int i=0;i<`N_MSHR;i++) begin
+        // read request next, should not be prefetch
+        if (tmp_next_2_mshr_table[i].valid & (~tmp_next_2_mshr_table[i].issued) & tmp_next_2_mshr_table[i].is_req) begin 
+            mshr_index_to_issue_mid_priority = i;
+            mid_priority_exist = '1;
+            issue2mem = '1;
+            break;
+        end
+    end
+    for (int i=0;i<`N_MSHR;i++) begin
+        // prefetch is of the lowest priority
+        if (tmp_next_2_mshr_table[i].valid & (~tmp_next_2_mshr_table[i].issued) ) begin 
+            mshr_index_to_issue_low_priority = i;
+            low_priority_exist = '1;
+            issue2mem = '1;
+            break;
+        end
+    end
+    if (high_priority_exist) begin
+        mshr_index_to_issue = mshr_index_to_issue_hi_priority;
+    end else if (mid_priority_exist) begin
+        mshr_index_to_issue = mshr_index_to_issue_mid_priority;
+    end else if (low_priority_exist) begin
+        mshr_index_to_issue = mshr_index_to_issue_low_priority;
     end
     // issue request to memory if there is any
     proc2Dmem_addr = '0;
@@ -690,6 +779,9 @@ always_ff @(negedge clock) begin
 
     $display("/*** MSHR self print | time: %0d ***/", $time);
     $display("time: %d MSHR: can_allocate_new_mshr_entry: %d", $time, can_allocate_new_mshr_entry);
+    $display("mshr_issue_hi_prio_index: %0d  valid: %0d", mshr_index_to_issue_hi_priority, high_priority_exist);
+    $display("mshr_issue_mid_prio_index: %0d  valid: %0d", mshr_index_to_issue_mid_priority, mid_priority_exist);
+    $display("mshr_issue_low_prio_index: %0d  valid: %0d", mshr_index_to_issue_low_priority, low_priority_exist);
     $display("/*** issue2mem: %0d ***/", issue2mem);
     $display("/*** mshr_index_to_issue: %0d ***/", mshr_index_to_issue);
     $display("/*** MEMORY ***");
@@ -719,7 +811,7 @@ always_ff @(negedge clock) begin
         end
     end
 end
-`endif 
+`endif
 
 // `ifdef DEBUG
 // always_ff @(negedge clock) begin
@@ -852,6 +944,7 @@ always_ff @( posedge clock ) begin
 end
 
 `ifdef DEBUG
+// registers
 assign dbg_main_cache_lines             = main_cache_lines;
 assign dbg_victim_cache_lines           = victim_cache_lines;
 assign dbg_n_vc_avail                   = n_vc_avail;
@@ -859,9 +952,68 @@ assign dbg_mshr_table                   = mshr_table;
 assign dbg_n_mshr_avail                 = n_mshr_avail;
 assign dbg_state                        = state;
 assign dbg_dcache_request_on_wait       = dcache_request_on_wait;
+// register peripherals
+assign dbg_next_main_cache_lines        = next_main_cache_lines;
+assign dbg_next_victim_cache_lines      = next_victim_cache_lines;
+assign dbg_next_n_vc_avail              = next_n_vc_avail;
+assign dbg_next_mshr_table              = next_mshr_table;
+assign dbg_next_n_mshr_avail            = next_n_mshr_avail;
+assign dbg_next_state                   = next_state;
+assign dbg_next_dcache_request_on_wait  = next_dcache_request_on_wait;
+// combinationals
+assign dbg_cache_hit                    = cache_hit;
+assign dbg_main_cache_hit               = main_cache_hit;
+assign dbg_main_cache_hit_index         = main_cache_hit_index;
+assign dbg_vc_hit                       = vc_hit;
+assign dbg_vc_hit_index                 = vc_hit_index;
+assign dbg_mshr_hit                     = mshr_hit;
+assign dbg_mshr_real_hit                = mshr_real_hit;
+assign dbg_mshr_hit_index               = mshr_hit_index;
+assign dbg_request_finished             = request_finished;
+// communication wires
 assign dbg_mshr2dcache_packet           = mshr2dcache_packet;
 assign dbg_vic_cache_line_evicted       = vic_cache_line_evicted;
-assign dbg_main_cache_line_evicted_addr = main_cache_line_evicted_addr;
+assign dbg_main_cache_line_evicted      = main_cache_line_evicted;
+assign dbg_maincache_line_evicted_addr  = main_cache_line_evicted_addr;
+assign dbg_main_cache_line_upon_hit     = main_cache_line_upon_hit;
+assign dbg_vic_cache_line_upon_hit      = vic_cache_line_upon_hit;
+// main cache related
+assign dbg_cache_line_index_for_new_data        = cache_line_index_for_new_data;
+assign dbg_need_to_evict                        = need_to_evict;
+assign dbg_mshr2dcache_packet_USED              = mshr2dcache_packet_USED;
+assign dbg_loaded_CL_same_addr_as_evicted_CL    = loaded_CL_same_addr_as_evicted_CL;
+assign dbg_cache_line_index_for_MSHR_real_hit   = cache_line_index_for_MSHR_real_hit;
+assign dbg_need_to_evict_MSHR_real_hit          = need_to_evict_MSHR_real_hit;
+assign dbg_main_cache_response_case             = main_cache_response_case;
+// victim cache related
+assign dbg_vc_need_evict                        = vc_need_evict;
+assign dbg_vc_CL_evicted                        = vc_CL_evicted;
+assign dbg_vc_CL_evicted_index                  = vc_CL_evicted_index;
+assign dbg_vc_free_index                        = vc_free_index;
+assign dbg_current_smallest_index               = current_smallest_index;
+assign dbg_current_smallest_lru                 = current_smallest_lru;
+assign dbg_index_selector                       = index_selector;
+// MSHR related
+assign dbg_addrs2mshr                          = addrs2mshr;
+assign dbg_base_addr                           = base_addr;
+assign dbg_free_mshr_entry_idx                 = free_mshr_entry_idx;
+assign dbg_idx_wires                           = idx_wires;
+assign dbg_mshr_index_to_issue                 = mshr_index_to_issue;
+assign dbg_mshr_index_to_issue_hi_priority     = mshr_index_to_issue_hi_priority;
+assign dbg_mshr_index_to_issue_mid_priority    = mshr_index_to_issue_mid_priority;
+assign dbg_mshr_index_to_issue_low_priority    = mshr_index_to_issue_low_priority;
+assign dbg_high_priority_exist                 = high_priority_exist;
+assign dbg_mid_priority_exist                  = mid_priority_exist;
+assign dbg_low_priority_exist                  = low_priority_exist;
+assign dbg_issue2mem                           = issue2mem;
+assign dbg_can_allocate_new_mshr_entry         = can_allocate_new_mshr_entry;
+assign dbg_tmp_next_1_mshr_table               = tmp_next_1_mshr_table;
+assign dbg_tmp_next_2_mshr_table               = tmp_next_2_mshr_table;
+assign dbg_tmp_next_3_mshr_table               = tmp_next_3_mshr_table;
+assign dbg_n_mshr_avail_wires                  = n_mshr_avail_wires;
+
+
+
 
 `endif 
 endmodule

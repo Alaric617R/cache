@@ -177,7 +177,7 @@ logic loaded_CL_same_addr_as_evicted_CL;
 `ifdef DIRECT_MAPPED
     assign cache_line_index_for_new_data = mshr2dcache_packet.cache_line_addr[`N_IDX_BITS + `DC_BO - 1:`DC_BO];
     assign need_to_evict = main_cache_lines[cache_line_index_for_new_data].valid;
-    assign loaded_CL_same_addr_as_evicted_CL = need_to_evict & (main_cache_lines[cache_line_index_for_new_data].tag == mshr2dcache_packet.cache_line_addr[`XLEN-1:`N_IDX_BITS + `DC_BO]);
+    assign loaded_CL_same_addr_as_evicted_CL = need_to_evict & (main_cache_lines[cache_line_index_for_new_data].tag == mshr2dcache_packet.cache_line_addr[`XLEN-1:`XLEN-`DC_TAG_LEN]);
 `elsif TWO_WAY_SET_ASSOCIATIVE
     assign cache_line_index_for_new_data = // TBD
     assign need_to_evict = // TBD (need to consider if a set already contain that cache line)

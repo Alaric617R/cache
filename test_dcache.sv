@@ -218,6 +218,7 @@ module testbench;
         $display("/*** DCACHE RESPONSE ***/");
         $display("  reg_data: %0d", dcache_response.reg_data);
         $display("  valid: %0d", dcache_response.valid);
+        
     endtask
 
     task print_this_cycle_state;
@@ -296,13 +297,13 @@ module testbench;
 
 
         @(posedge clock);
-        dcache_request = gen_dcache_read_request(32'h1010, BYTE, 1);
+        dcache_request = gen_dcache_read_request(32'h1010, WORD, 1);
         @(negedge clock)  #3;
         print_this_cycle_state;
         $display("RESET: %d", reset);
 
         @(negedge clock)  #3;
-        dcache_request = gen_dcache_write_request(32'h1010, BYTE, 1);
+        dcache_request = gen_dcache_write_request(32'h1010, HALF, 1);
 
         print_this_cycle_state;
         $display("RESET: %d", reset);

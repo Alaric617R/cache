@@ -323,7 +323,7 @@ HEADERS = cache_def.svh \
 		  sys_defs.svh
 
 
-TESTBENCH = test_write.sv \
+TESTBENCH = test_dcache.sv \
 			mem.sv \
 			# test/pipe_print.c
 

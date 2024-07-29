@@ -141,6 +141,18 @@ always_comb begin : manage_cache_internal_state
         end
     endcase
 end
+`ifdef DEBUG
+always_comb begin
+    $display("/****** next_state TIME: %0d ******/", $time);
+    case(next_state)
+        READY: $display("next_state: READY");
+        WAIT: $display("next_state: WAIT");
+        WAIT_MSHR: $display("next_state: WAIT_MSHR");
+        FLUSH: $display("next_state: FLUSH");
+    endcase
+
+end
+`endif 
 
 /*** modify request_finished & next_dcache_request_on_wait  ***/
 // for write-miss, the request finished when the CL needed to be written is brought to cache since it's WRITE-BACK

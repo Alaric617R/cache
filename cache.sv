@@ -246,7 +246,7 @@ always_comb begin : manage_main_cache
                         WORD:  next_main_cache_lines[cache_line_index_for_MSHR_real_hit].block.word_level[dcache_request.addr[2:2]] = dcache_request.write_content[31:0];
                     endcase
                 end
-    end else if (state == READY & ~loaded_CL_same_addr_as_evicted_CL & mshr_real_hit & ~main_cache_hit & ~vc_hit & mshr_table[mshr_hit_index].mem_op == MEM_READ) begin /** Data forwarded from MSHR broadcast packet **/
+    end else if (state == READY & mshr_real_hit & ~main_cache_hit & ~vc_hit & mshr_table[mshr_hit_index].mem_op == MEM_READ) begin /** Data forwarded from MSHR broadcast packet **/
             main_cache_response_case = HIT_ON_MSHR_PKT;
             mshr2dcache_packet_USED = '1; // !used for simplifying the code
             next_main_cache_lines[cache_line_index_for_new_data].valid = '1;
@@ -264,7 +264,7 @@ always_comb begin : manage_main_cache
                     WORD:  next_main_cache_lines[cache_line_index_for_new_data].block.word_level[dcache_request.addr[2:2]] = dcache_request.write_content[31:0];
                 endcase
             end
-            if (need_to_evict) begin
+            if (need_to_evict & (~loaded_CL_same_addr_as_evicted_CL) ) begin
                 // transmit evicted cache line to victim cache
                 main_cache_line_evicted = main_cache_lines[cache_line_index_for_new_data];
                 main_cache_line_evicted_addr = {main_cache_lines[cache_line_index_for_new_data].tag, cache_line_index_for_new_data, 3'b0};
@@ -272,7 +272,7 @@ always_comb begin : manage_main_cache
     end
     
     // cache miss, response from MSHR
-    if (~loaded_CL_same_addr_as_evicted_CL | ~mshr2dcache_packet_USED & mshr2dcache_packet.valid & mshr2dcache_packet.mem_op == MEM_READ) begin /** Date forwarded from MSHR-memory response packet **/
+    if ( ~mshr2dcache_packet_USED & mshr2dcache_packet.valid & mshr2dcache_packet.mem_op == MEM_READ) begin /** Date forwarded from MSHR-memory response packet **/
         main_cache_response_case = FWD_FROM_MSHR_PKT;
         if (~need_to_evict | (need_to_evict & mshr2dcache_packet.is_req) ) begin
             next_main_cache_lines[cache_line_index_for_new_data].valid = '1;
@@ -283,7 +283,7 @@ always_comb begin : manage_main_cache
                 next_main_cache_lines[cache_line_index_for_new_data].addr  = mshr2dcache_packet.cache_line_addr;
             `endif 
         end
-        if (need_to_evict) begin
+        if (need_to_evict | (~loaded_CL_same_addr_as_evicted_CL) ) begin
             // transmit evicted cache line to victim cache
             main_cache_line_evicted = main_cache_lines[cache_line_index_for_new_data];
             main_cache_line_evicted_addr = {main_cache_lines[cache_line_index_for_new_data].tag, cache_line_index_for_new_data, 3'b0};
@@ -637,20 +637,20 @@ always_comb begin : manage_MSHR
     for (int i=0;i<`N_MSHR;i++) begin
         // highest priority: request and write operation SINCE MSHR-WRITE ENTRY CAN BE FREED UPON MEMORY RESPONSE 
         if (tmp_next_2_mshr_table[i].valid & (~tmp_next_2_mshr_table[i].issued) & (tmp_next_2_mshr_table[i].mem_op == MEM_WRITE) ) begin
-            mshr_index_to_issue = i;    
-            issue2mem = '1;    
+            mshr_index_to_issue = i;
+            issue2mem = '1;
             break;
         end else if (tmp_next_2_mshr_table[i].valid & (~tmp_next_2_mshr_table[i].issued) & tmp_next_2_mshr_table[i].is_req) begin // read request next, should not be prefetch
-            mshr_index_to_issue = i; 
-            issue2mem = '1;        
+            mshr_index_to_issue = i;
+            issue2mem = '1;
             break;
         end else if (tmp_next_2_mshr_table[i].valid & (~tmp_next_2_mshr_table[i].issued) ) begin // prefetch is of the lowest priority
-            mshr_index_to_issue = i;   
-            issue2mem = '1;      
+            mshr_index_to_issue = i;
+            issue2mem = '1;
             break;
-        end 
+        end
     end
-    // issue request to memory if there is any 
+    // issue request to memory if there is any
     proc2Dmem_addr = '0;
     proc2Dmem_data = '0;
     if (issue2mem) begin
@@ -762,7 +762,7 @@ end
         main_cache_hit              = '0;
         main_cache_line_upon_hit    = '0;
         main_cache_hit_index        = '0;
-        if (dcache_request.valid) begin
+        if (dcache_request.valid & (state == READY)) begin
             // check if that line has valid CL and if tag match
             if (main_cache_lines[hit_idx_expected].valid & (main_cache_lines[hit_idx_expected].tag == dcache_req_CL_tag) ) begin
                     main_cache_hit = '1;
@@ -784,7 +784,7 @@ always_comb begin : determine_victim_cache_hit
     vc_hit                  = '0;
     vc_hit_index            = '0;
     vic_cache_line_upon_hit = '0;
-    if (dcache_request.valid) begin
+    if (dcache_request.valid & (state == READY)) begin
         for (int i = 0; i < `N_VC_CL; i++) begin
             if (victim_cache_lines[i].valid & (victim_cache_lines[i].tag == dcache_request.addr[`XLEN-1:`DC_BO]) ) begin
                 vc_hit = '1;
@@ -804,7 +804,7 @@ always_comb begin : determine_MSHR_hit
     mshr_hit            = '0;
     mshr_real_hit       = '0;
     mshr_hit_index      = '0;
-    if (dcache_request.valid) begin
+    if (dcache_request.valid & (state == READY)) begin
         // can the request be handled on this cycle?
         for (int i = 0; i < `N_MSHR; i++) begin
             if (mshr_table[i].valid & (mshr_table[i].cache_line_addr[`XLEN-1:`DC_BO] == dcache_request.addr[`XLEN-1:`DC_BO]) ) begin

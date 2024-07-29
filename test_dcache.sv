@@ -301,15 +301,18 @@ module testbench;
 
         @(posedge clock);
         dcache_request = gen_dcache_read_request(32'h1010, WORD, 1);
-        @(negedge clock)  #3;
-        print_this_cycle_state;
-        $display("RESET: %d", reset);
 
         @(negedge clock)  #3;
+        print_this_cycle_state;
+
+
+        @(negedge clock)  #3;
+        
+        @(posedge clock);
         dcache_request = gen_dcache_write_request(32'h1010, HALF, 32'd66, 1);
 
         print_this_cycle_state;
-        $display("RESET: %d", reset);
+
 
         @(negedge clock)  #3;
         print_this_cycle_state;

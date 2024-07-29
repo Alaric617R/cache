@@ -109,7 +109,7 @@ logic [`XLEN - 1 : `N_IDX_BITS + `DC_BO] dcache_req_CL_tag; // cache line tag of
 assign stall_out = ~(state == READY);
 
 /*** cache hit ***/
-assign cache_hit = main_cache_hit | vc_hit | mshr_real_hit;
+assign cache_hit = (main_cache_hit | vc_hit | mshr_real_hit) & (state == READY);
 
 /*** determine internal state ***/
 always_comb begin : manage_cache_internal_state
@@ -420,6 +420,7 @@ always_comb begin : output_selector
     // cache hit
     if ((state==READY) & cache_hit) begin
         next_dcache_response.valid = '1;
+        next_dcache_response.mem_op = dcache_request.mem_op;
         if (main_cache_hit) begin
             data2output = main_cache_line_upon_hit.block;
         end else if (vc_hit) begin

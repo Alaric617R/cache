@@ -87,6 +87,7 @@ typedef struct packed {
 typedef struct packed {
     REG_DATA_T reg_data;
     logic valid;
+    MEM_OP_T mem_op;
 } DCACHE_RESPONSE;
 
 

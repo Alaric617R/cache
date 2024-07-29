@@ -442,7 +442,7 @@ always_comb begin : output_selector
         HALF: next_dcache_response.reg_data[15:0] = data2output.half_level[dcache_request_on_wait.addr[2:1]];
         WORD: next_dcache_response.reg_data[31:0] = data2output.word_level[dcache_request_on_wait.addr[2:2]];
     endcase
-    
+    next_dcache_response.mem_op = dcache_request_on_wait.mem_op;
 end
 
 /*** manage MSHR table ***/

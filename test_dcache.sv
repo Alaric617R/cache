@@ -218,7 +218,10 @@ module testbench;
         $display("/*** DCACHE RESPONSE ***/");
         $display("  reg_data: %0d", dcache_response.reg_data);
         $display("  valid: %0d", dcache_response.valid);
-        
+        case (dcache_response.mem_op)
+            MEM_READ: $display("  mem_op: READ");
+            MEM_WRITE: $display("  mem_op: WRITE");
+        endcase
     endtask
 
     task print_this_cycle_state;

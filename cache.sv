@@ -203,6 +203,7 @@ always_comb begin : manage_main_cache
     next_main_cache_lines = main_cache_lines;
     mshr2dcache_packet_USED = '0;
     main_cache_response_case = NONE;
+    main_cache_line_evicted = '0;
     // cache hit (NO NEED TO ALLOCATE NEW CACHE LINE!) (mshr real hit dealt in another case)
     if (  (main_cache_hit==1'b1) && (state == READY) ) begin
         main_cache_response_case = HIT;

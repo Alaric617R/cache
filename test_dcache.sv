@@ -51,54 +51,54 @@ module testbench;
     logic dbg_cache_hit;
     logic dbg_main_cache_hit;
     logic [`N_IDX_BITS:0] dbg_main_cache_hit_index;
-    logic dbg_vc_hit,
-    logic [$clog2(`N_VC_CL) : 0] dbg_vc_hit_index,
-    logic dbg_mshr_hit,
-    logic dbg_mshr_real_hit,
-    logic [$clog2(`N_MSHR): 0]  dbg_mshr_hit_index,
-    logic dbg_request_finished,
+    logic dbg_vc_hit;
+    logic [$clog2(`N_VC_CL) : 0] dbg_vc_hit_index;
+    logic dbg_mshr_hit;
+    logic dbg_mshr_real_hit;
+    logic [$clog2(`N_MSHR): 0]  dbg_mshr_hit_index;
+    logic dbg_request_finished;
     // commuication wires
-    MSHR_ENTRY dbg_mshr2dcache_packet,  // when a memory response comes in, erase matched MSHR entry and transfer that cache line to main cache/victim cache
-    VICTIM_CACHE_LINE dbg_vic_cache_line_evicted,  // must be from victim cache to MSHR
-    CACHE_LINE dbg_main_cache_line_evicted, // from main cache to victim cache
-    MEM_ADDR_T dbg_main_cache_line_evicted_addr, // address of CL evicted from main cache
-    CACHE_LINE dbg_main_cache_line_upon_hit, // cache line hit at main cache
-    VICTIM_CACHE_LINE dbg_vic_cache_line_upon_hit, //cache line hit at victim cache
+    MSHR_ENTRY dbg_mshr2dcache_packet;  // when a memory response comes in; erase matched MSHR entry and transfer that cache line to main cache/victim cache
+    VICTIM_CACHE_LINE dbg_vic_cache_line_evicted;  // must be from victim cache to MSHR
+    CACHE_LINE dbg_main_cache_line_evicted; // from main cache to victim cache
+    MEM_ADDR_T dbg_main_cache_line_evicted_addr; // address of CL evicted from main cache
+    CACHE_LINE dbg_main_cache_line_upon_hit; // cache line hit at main cache
+    VICTIM_CACHE_LINE dbg_vic_cache_line_upon_hit; //cache line hit at victim cache
     // main cache related
-    logic [$clog2(`N_CL):0] dbg_cache_line_index_for_new_data,
-    logic dbg_need_to_evict,
-    logic dbg_mshr2dcache_packet_USED,
-    logic dbg_loaded_CL_same_addr_as_evicted_CL,
-    logic [$clog2(`N_CL):0] dbg_cache_line_index_for_MSHR_real_hit,
-    logic dbg_need_to_evict_MSHR_real_hit,
-    DBG_MAIN_CACHE_STATE_T dbg_main_cache_response_case,
+    logic [$clog2(`N_CL):0] dbg_cache_line_index_for_new_data;
+    logic dbg_need_to_evict;
+    logic dbg_mshr2dcache_packet_USED;
+    logic dbg_loaded_CL_same_addr_as_evicted_CL;
+    logic [$clog2(`N_CL):0] dbg_cache_line_index_for_MSHR_real_hit;
+    logic dbg_need_to_evict_MSHR_real_hit;
+    DBG_MAIN_CACHE_STATE_T dbg_main_cache_response_case;
 // victim cache related
-    logic dbg_vc_need_evict,
-    VICTIM_CACHE_LINE dbg_vc_CL_evicted,
-    logic [$clog2(`N_VC_CL) : 0] dbg_vc_CL_evicted_index,
-    logic [$clog2(`N_VC_CL) : 0] dbg_vc_free_index,
-    logic [$clog2(`N_VC_CL) : 0] dbg_current_smallest_index,
-    logic [$clog2(`N_VC_CL) : 0] dbg_current_smallest_lru,
-    logic [$clog2(`N_VC_CL) : 0] dbg_index_selector,
+    logic dbg_vc_need_evict;
+    VICTIM_CACHE_LINE dbg_vc_CL_evicted;
+    logic [$clog2(`N_VC_CL) : 0] dbg_vc_CL_evicted_index;
+    logic [$clog2(`N_VC_CL) : 0] dbg_vc_free_index;
+    logic [$clog2(`N_VC_CL) : 0] dbg_current_smallest_index;
+    logic [$clog2(`N_VC_CL) : 0] dbg_current_smallest_lru;
+    logic [$clog2(`N_VC_CL) : 0] dbg_index_selector;
     // dcache response related
     // MSHR related
-    PREFETCH_ADDR_T [`N_PF:0] dbg_addrs2mshr,
-    MEM_ADDR_T dbg_base_addr,
-    logic [`N_PF:0] [$clog2(`N_MSHR):0]   dbg_free_mshr_entry_idx,
-    logic [`N_MSHR:0] [`N_PF:0] dbg_idx_wires,
-    logic [$clog2(`N_MSHR):0] dbg_mshr_index_to_issue,
-    logic [$clog2(`N_MSHR):0] dbg_mshr_index_to_issue_hi_priority,
-    logic [$clog2(`N_MSHR):0] dbg_mshr_index_to_issue_mid_priority,
-    logic [$clog2(`N_MSHR):0] dbg_mshr_index_to_issue_low_priority,
-    logic dbg_high_priority_exist,
-    logic dbg_mid_priority_exist,
-    logic dbg_low_priority_exist,
-    logic dbg_issue2mem,
-    logic dbg_can_allocate_new_mshr_entry,
-    MSHR_ENTRY [`N_MSHR - 1 : 0] dbg_tmp_next_1_mshr_table,
-    MSHR_ENTRY [`N_MSHR - 1 : 0] dbg_tmp_next_2_mshr_table,
-    MSHR_ENTRY [`N_MSHR - 1 : 0] dbg_tmp_next_3_mshr_table,
-    logic [`N_MSHR:0] [$clog2(`N_MSHR):0]  dbg_n_mshr_avail_wires
+    PREFETCH_ADDR_T [`N_PF:0] dbg_addrs2mshr;
+    MEM_ADDR_T dbg_base_addr;
+    logic [`N_PF:0] [$clog2(`N_MSHR):0]   dbg_free_mshr_entry_idx;
+    logic [`N_MSHR:0] [`N_PF:0] dbg_idx_wires;
+    logic [$clog2(`N_MSHR):0] dbg_mshr_index_to_issue;
+    logic [$clog2(`N_MSHR):0] dbg_mshr_index_to_issue_hi_priority;
+    logic [$clog2(`N_MSHR):0] dbg_mshr_index_to_issue_mid_priority;
+    logic [$clog2(`N_MSHR):0] dbg_mshr_index_to_issue_low_priority;
+    logic dbg_high_priority_exist;
+    logic dbg_mid_priority_exist;
+    logic dbg_low_priority_exist;
+    logic dbg_issue2mem;
+    logic dbg_can_allocate_new_mshr_entry;
+    MSHR_ENTRY [`N_MSHR - 1 : 0] dbg_tmp_next_1_mshr_table;
+    MSHR_ENTRY [`N_MSHR - 1 : 0] dbg_tmp_next_2_mshr_table;
+    MSHR_ENTRY [`N_MSHR - 1 : 0] dbg_tmp_next_3_mshr_table;
+    logic [`N_MSHR:0] [$clog2(`N_MSHR):0]  dbg_n_mshr_avail_wires;
 
     // CLOCK_PERIOD is defined on the commandline by the makefile
     always begin

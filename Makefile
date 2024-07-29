@@ -104,7 +104,7 @@ export CLOCK_PERIOD = 20
 # the Verilog Compiler command and arguments
 VCS = SW_VCS=2020.12-SP2-1 vcs -sverilog +vc -Mupdate -line -full64 -kdb -nc -lca \
       -debug_access+all+reverse $(VCS_BAD_WARNINGS) +define+CLOCK_PERIOD=$(CLOCK_PERIOD) \
-	  +define+CACHE_MODE +define+DEBUG +define+DIRECT_MAPPED +define+ALOC_MSHR_UPON_MSHR_ETY_HIY
+	  +define+CACHE_MODE +define+DEBUG +define+DIRECT_MAPPED
 # a SYNTH define is added when compiling for synthesis that can be used in testbenches
 
 # remove certain warnings that generate MB of text but can be safely ignored

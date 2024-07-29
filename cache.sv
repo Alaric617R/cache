@@ -177,7 +177,7 @@ logic loaded_CL_same_addr_as_evicted_CL;
 `ifdef DIRECT_MAPPED
     assign cache_line_index_for_new_data = mshr2dcache_packet.cache_line_addr[`N_IDX_BITS + `DC_BO - 1:`DC_BO];
     assign need_to_evict = main_cache_lines[cache_line_index_for_new_data].valid;
-    assign loaded_CL_same_addr_as_evicted_CL = (main_cache_lines[cache_line_index_for_new_data].tag == mshr2dcache_packet.cache_line_addr[`XLEN-1:`N_IDX_BITS + `DC_BO]);
+    assign loaded_CL_same_addr_as_evicted_CL = need_to_evict & (main_cache_lines[cache_line_index_for_new_data].tag == mshr2dcache_packet.cache_line_addr[`XLEN-1:`N_IDX_BITS + `DC_BO]);
 `elsif TWO_WAY_SET_ASSOCIATIVE
     assign cache_line_index_for_new_data = // TBD
     assign need_to_evict = // TBD (need to consider if a set already contain that cache line)
@@ -246,7 +246,7 @@ always_comb begin : manage_main_cache
                         WORD:  next_main_cache_lines[cache_line_index_for_MSHR_real_hit].block.word_level[dcache_request.addr[2:2]] = dcache_request.write_content[31:0];
                     endcase
                 end
-    end else if (state == READY & mshr_real_hit & ~main_cache_hit & ~vc_hit & mshr_table[mshr_hit_index].mem_op == MEM_READ) begin /** Data forwarded from MSHR broadcast packet **/
+    end else if (state == READY & ~loaded_CL_same_addr_as_evicted_CL & mshr_real_hit & ~main_cache_hit & ~vc_hit & mshr_table[mshr_hit_index].mem_op == MEM_READ) begin /** Data forwarded from MSHR broadcast packet **/
             main_cache_response_case = HIT_ON_MSHR_PKT;
             mshr2dcache_packet_USED = '1; // !used for simplifying the code
             next_main_cache_lines[cache_line_index_for_new_data].valid = '1;

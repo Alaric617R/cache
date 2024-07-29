@@ -106,9 +106,9 @@ module testbench;
                 $write("  issued: %0d", dbg_mshr_table[i].issued);
                 $write("  mem_op: %0d", dbg_mshr_table[i].mem_op);
                 $write("  Dmem2proc_tag: %0d", dbg_mshr_table[i].Dmem2proc_tag);
-                $write("  Dmem2proc_data: %0h", dbg_mshr_table[i].Dmem2proc_data);
+                $write("  Dmem2proc_data: %0d", dbg_mshr_table[i].Dmem2proc_data);
                 $write("  cache_line_addr: %0b", dbg_mshr_table[i].cache_line_addr);
-                $write("  write_content: %0h", dbg_mshr_table[i].write_content);
+                $write("  write_content: %0d", dbg_mshr_table[i].write_content);
                 $write("\n");
             end
         end
@@ -124,7 +124,7 @@ module testbench;
             $write("  valid: %0d", dbg_main_cache_lines[i].valid);
             $write("  dirty: %0d", dbg_main_cache_lines[i].dirty);
             $write("  tag: %0b", dbg_main_cache_lines[i].tag);
-            $write("  block: %0h", dbg_main_cache_lines[i].block);
+            $write("  block: %0d", dbg_main_cache_lines[i].block);
             $write("\n");
         end
         $write("\n");
@@ -139,7 +139,7 @@ module testbench;
             $write("  valid: %0d", dbg_victim_cache_lines[i].valid);
             $write("  dirty: %0d", dbg_victim_cache_lines[i].dirty);
             $write("  lru: %0d", dbg_victim_cache_lines[i].lru);
-            $write("  block: %0h", dbg_victim_cache_lines[i].block);
+            $write("  block: %0d", dbg_victim_cache_lines[i].block);
             $write("\n");
         end
         $write("\n");
@@ -153,7 +153,7 @@ module testbench;
             $write("  mem_op: %0d", dbg_dcache_request_on_wait.mem_op);
             $write("  addr: %0b", dbg_dcache_request_on_wait.addr);
             $write("  size: %0d", dbg_dcache_request_on_wait.size);
-            $write("  write_content: %0h", dbg_dcache_request_on_wait.write_content);
+            $write("  write_content: %0d", dbg_dcache_request_on_wait.write_content);
             $write("  valid: %0d", dbg_dcache_request_on_wait.valid);
             $write("  pc: %0h", dbg_dcache_request_on_wait.pc);
             $write("\n");
@@ -178,11 +178,11 @@ module testbench;
             end
             BUS_STORE: begin
                  $display("BUS COMMAND: STORE");
-                 $display("  proc2Dmem_data: %0h", proc2Dmem_data);
+                 $display("  proc2Dmem_data: %0d", proc2Dmem_data);
             end
         endcase
         $display("  proc2Dmem_addr: %0b", proc2Dmem_addr);
-        $display("  Dmem2proc_data: %0h", Dmem2proc_data);
+        $display("  Dmem2proc_data: %0d", Dmem2proc_data);
         $display("  Dmem2proc_response: %0d", Dmem2proc_response);
         $display("  Dmem2proc_tag: %0d", Dmem2proc_tag);
     endtask
@@ -197,9 +197,9 @@ module testbench;
             $display("  is_req: %0d", dbg_mshr2dcache_packet.is_req);
             $display("  mem_op: %0d", dbg_mshr2dcache_packet.mem_op);
             $display("  Dmem2proc_tag: %0d", dbg_mshr2dcache_packet.Dmem2proc_tag);
-            $display("  Dmem2proc_data: %0h", dbg_mshr2dcache_packet.Dmem2proc_data);
+            $display("  Dmem2proc_data: %0d", dbg_mshr2dcache_packet.Dmem2proc_data);
             $display("  cache_line_addr: %0b", dbg_mshr2dcache_packet.cache_line_addr);
-            $display("  write_content: %0h", dbg_mshr2dcache_packet.write_content);
+            $display("  write_content: %0d", dbg_mshr2dcache_packet.write_content);
         end
         if (dbg_vic_cache_line_evicted.valid) begin
             $display("VIC_CACHE_LINE_EVICTED: VALID");
@@ -207,7 +207,7 @@ module testbench;
             $display("  dirty: %0d", dbg_vic_cache_line_evicted.dirty);
             $display("  lru: %0d", dbg_vic_cache_line_evicted.lru);
             $display("  tag: %0b", dbg_vic_cache_line_evicted.tag);
-            $display("  block: %0h", dbg_vic_cache_line_evicted.block);
+            $display("  block: %0d", dbg_vic_cache_line_evicted.block);
         end
         if (dbg_main_cache_line_evicted_addr) begin
             $display("MAIN_CACHE_LINE_EVICTED_ADDR: %0b", dbg_main_cache_line_evicted_addr);

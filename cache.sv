@@ -173,9 +173,11 @@ end
 logic [$clog2(`N_CL):0] cache_line_index_for_new_data; // can be missed request or PREFETCH!!!
 logic need_to_evict; // can the newly loaded cache line be accommodate to main cache without eviction?
 logic mshr2dcache_packet_USED;
+logic loaded_CL_same_addr_as_evicted_CL;
 `ifdef DIRECT_MAPPED
     assign cache_line_index_for_new_data = mshr2dcache_packet.cache_line_addr[`N_IDX_BITS + `DC_BO - 1:`DC_BO];
     assign need_to_evict = main_cache_lines[cache_line_index_for_new_data].valid;
+    assign loaded_CL_same_addr_as_evicted_CL = (main_cache_lines[cache_line_index_for_new_data].tag == mshr2dcache_packet.cache_line_addr[`XLEN-1:`N_IDX_BITS + `DC_BO]);
 `elsif TWO_WAY_SET_ASSOCIATIVE
     assign cache_line_index_for_new_data = // TBD
     assign need_to_evict = // TBD (need to consider if a set already contain that cache line)
@@ -270,7 +272,7 @@ always_comb begin : manage_main_cache
     end
     
     // cache miss, response from MSHR
-    if (~mshr2dcache_packet_USED & mshr2dcache_packet.valid & mshr2dcache_packet.mem_op == MEM_READ) begin /** Date forwarded from MSHR-memory response packet **/
+    if (~loaded_CL_same_addr_as_evicted_CL | ~mshr2dcache_packet_USED & mshr2dcache_packet.valid & mshr2dcache_packet.mem_op == MEM_READ) begin /** Date forwarded from MSHR-memory response packet **/
         main_cache_response_case = FWD_FROM_MSHR_PKT;
         if (~need_to_evict | (need_to_evict & mshr2dcache_packet.is_req) ) begin
             next_main_cache_lines[cache_line_index_for_new_data].valid = '1;
@@ -316,6 +318,7 @@ always_comb begin
         WAIT_MSHR: $display("STATE: WAIT_MSHR");
         FLUSH: $display("STATE: FLUSH");
     endcase
+    $display("!!!@@@@ loaded_CL_same_addr_as_evicted_CL: %0b", loaded_CL_same_addr_as_evicted_CL);
     $display("mshr_real_hit: %0d  mshr_hit_index: %0d", mshr_real_hit, mshr_hit_index);
     $display("cache_hit: %0d  main_cache_hit: %0d  vc_hit: %0d", cache_hit, main_cache_hit, vc_hit);
     $display("needd_to_evict: %0d", need_to_evict);
@@ -608,7 +611,11 @@ always_comb begin : manage_MSHR
     end
 
     /** allocate new MSHR entry when there are enough MSHR free entry **/
+`ifdef ALOC_MSHR_UPON_MSHR_ETY_HIY
     can_allocate_new_mshr_entry =  ( (state == READY) & (next_state == WAIT) ) | ( (state == WAIT_MSHR) & (next_state == WAIT) );
+`else
+    can_allocate_new_mshr_entry =  (~mshr_hit) & ( (state == READY) & (next_state == WAIT) ) | ( (state == WAIT_MSHR) & (next_state == WAIT) );
+`endif
     for (int i=0; i<`N_PF+1;i++) begin
         tmp_next_2_mshr_table[free_mshr_entry_idx[i]].valid = addrs2mshr[i].valid & can_allocate_new_mshr_entry;
         tmp_next_2_mshr_table[free_mshr_entry_idx[i]].is_req = (i==0)? '1:'0; // index zero is the request, the rest are prefetch

@@ -303,7 +303,7 @@ module testbench;
         $display("RESET: %d", reset);
 
         @(negedge clock)  #3;
-        dcache_request = gen_dcache_write_request(32'h1010, HALF, 1);
+        dcache_request = gen_dcache_write_request(32'h1010, HALF, 32'd66, 1);
 
         print_this_cycle_state;
         $display("RESET: %d", reset);

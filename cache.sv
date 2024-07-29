@@ -665,14 +665,14 @@ always_ff @(negedge clock) begin
     $display("/*** MEMORY ***");
     $display("Dmem2proc_response: %0d", Dmem2proc_response);
     $display("Dmem2proc_tag: %0d", Dmem2proc_tag);
-    $display("Dmem2proc_data: %0h", Dmem2proc_data);
+    $display("Dmem2proc_data: %0d", Dmem2proc_data);
     case(proc2Dmem_command)
         BUS_LOAD: $display("proc2Dmem_command: BUS_LOAD");
         BUS_STORE: $display("proc2Dmem_command: BUS_STORE");
         BUS_NONE: $display("proc2Dmem_command: BUS_NONE");
     endcase
     $display("proc2Dmem_addr: %0b", proc2Dmem_addr);
-    $display("proc2Dmem_data: %0h", proc2Dmem_data);
+    $display("proc2Dmem_data: %0d", proc2Dmem_data);
     $display("/*** next_mshr_table (0 for READ) | TIME: %d ***/", $time);
     for (int i=0; i<`N_MSHR; i++) begin
         if (next_mshr_table[i].valid) begin
@@ -684,7 +684,7 @@ always_ff @(negedge clock) begin
             $write("  Dmem2proc_tag: %0d, ", next_mshr_table[i].Dmem2proc_tag);
             $write("  Dmem2proc_data: %0d, ", next_mshr_table[i].Dmem2proc_data);
             $write("  cache_line_addr: %0b, ", next_mshr_table[i].cache_line_addr);
-            $write("  write_content: %0h, ", next_mshr_table[i].write_content);
+            $write("  write_content: %0d, ", next_mshr_table[i].write_content);
             $display("");
         end
     end

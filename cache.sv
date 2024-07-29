@@ -147,8 +147,8 @@ end
 always_comb begin : process_cache_miss_request
     request_finished = '0;
     next_dcache_request_on_wait = dcache_request_on_wait;
-    if (state == READY & ~cache_hit & dcache_request.valid) next_dcache_request_on_wait = dcache_request;
-    if (state == WAIT & mshr2dcache_packet.mem_op == MEM_READ & mshr2dcache_packet.cache_line_addr[`XLEN-1:`DC_BO] == dcache_request_on_wait.addr[`XLEN-1:`DC_BO]) begin
+    if ((state == READY) & ~cache_hit & dcache_request.valid) next_dcache_request_on_wait = dcache_request;
+    if ((state == WAIT) & (mshr2dcache_packet.mem_op == MEM_READ) & (mshr2dcache_packet.cache_line_addr[`XLEN-1:`DC_BO] == dcache_request_on_wait.addr[`XLEN-1:`DC_BO]) ) begin
         request_finished = '1;
         next_dcache_request_on_wait = '0;
     end
@@ -321,7 +321,7 @@ always_comb begin
 
     for (int i=0; i<`N_CL; i++) begin
         $write("next_main_cache_lines[%0d] ", i);
-        $display("valid: %0d addr: %0b, tag: %0b, dirty: %0d\n", next_main_cache_lines[i].valid, next_main_cache_lines[i].addr, next_main_cache_lines[i].tag, next_main_cache_lines[i].dirty);
+        $display("valid: %0d addr: %0b, tag: %0b, dirty: %0d block: %0d\n", next_main_cache_lines[i].valid, next_main_cache_lines[i].addr, next_main_cache_lines[i].tag, next_main_cache_lines[i].dirty, next_main_cache_lines[i].block);
     end
 end
 `endif 
@@ -418,7 +418,7 @@ always_comb begin : output_selector
     next_dcache_response = '0;
     data2output = '0;
     // cache hit
-    if (state==READY & cache_hit) begin
+    if ((state==READY) & cache_hit) begin
         next_dcache_response.valid = '1;
         if (main_cache_hit) begin
             data2output = main_cache_line_upon_hit.block;

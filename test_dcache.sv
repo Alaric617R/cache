@@ -218,7 +218,7 @@ module testbench;
 
 
     task print_req_combs;
-        case(state)
+        case(dbg_state)
             READY: $display("STATE: READY");
             WAIT: $display("STATE: WAIT");
             WAIT_MSHR: $display("STATE: WAIT_MSHR");

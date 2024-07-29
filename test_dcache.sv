@@ -327,7 +327,7 @@ module testbench;
         @(negedge clock)  #3;
 
         @(posedge clock);
-        dcache_request = gen_dcache_write_request(32'h1010, HALF, 32'd66, 1);
+        dcache_request = gen_dcache_write_request(32'h1018, HALF, 32'd66, 1); // mshr hit
 
         print_this_cycle_state;
 

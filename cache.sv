@@ -23,7 +23,7 @@ module dcache(
 
     // from and to pipeline
     input  DCACHE_REQUEST  dcache_request,
-    output DCACHE_RESPONSE dcache_response, // register
+    output DCACHE_RESPONSE dcache_response, // !!!@@@ no longer register
 
     // From memory
     input [3:0]  Dmem2proc_response, // Should be zero unless there is a response
@@ -67,7 +67,7 @@ DC_STATE_T state; // for dcache
 DCACHE_REQUEST  dcache_request_on_wait;
 
 /*** Registers peripherals ***/
-DCACHE_RESPONSE next_dcache_response;
+// DCACHE_RESPONSE next_dcache_response;
 CACHE_LINE [`N_CL-1 : 0] next_main_cache_lines;
 VICTIM_CACHE_LINE [`N_VC_CL-1 : 0] next_victim_cache_lines;
 logic [$clog2(`N_VC_CL) : 0] next_n_vc_avail;
@@ -415,12 +415,15 @@ end
 // no need to worry about read/write data response. For write, there is no need for data response, as long as the valid bit is high
 EXAMPLE_CACHE_BLOCK data2output;
 always_comb begin : output_selector
-    next_dcache_response = '0;
+    // next_dcache_response = '0;
+    dcache_response = '0;
     data2output = '0;
     // cache hit
     if ((state==READY) & cache_hit) begin
-        next_dcache_response.valid = '1;
-        next_dcache_response.mem_op = dcache_request.mem_op;
+        // next_dcache_response.valid = '1;
+        // next_dcache_response.mem_op = dcache_request.mem_op;
+        dcache_response.valid = '1;
+        dcache_response.mem_op = dcache_request.mem_op;
         if (main_cache_hit) begin
             data2output = main_cache_line_upon_hit.block;
         end else if (vc_hit) begin
@@ -434,15 +437,20 @@ always_comb begin : output_selector
 
     // cache miss, but now MSHR response match with waiting request
     if (request_finished) begin
-        next_dcache_response.valid = '1;
-        next_dcache_response.mem_op = dcache_request_on_wait.mem_op;
+        // next_dcache_response.valid = '1;
+        // next_dcache_response.mem_op = dcache_request_on_wait.mem_op;
+        dcache_response.valid = '1;
+        dcache_response.mem_op = dcache_request_on_wait.mem_op;
         data2output = mshr2dcache_packet.Dmem2proc_data;
     end
 
     case (dcache_request_on_wait.size) 
-        BYTE: next_dcache_response.reg_data[7:0]  = data2output.byte_level[dcache_request_on_wait.addr[2:0]];
-        HALF: next_dcache_response.reg_data[15:0] = data2output.half_level[dcache_request_on_wait.addr[2:1]];
-        WORD: next_dcache_response.reg_data[31:0] = data2output.word_level[dcache_request_on_wait.addr[2:2]];
+        // BYTE: next_dcache_response.reg_data[7:0]  = data2output.byte_level[dcache_request_on_wait.addr[2:0]];
+        // HALF: next_dcache_response.reg_data[15:0] = data2output.half_level[dcache_request_on_wait.addr[2:1]];
+        // WORD: next_dcache_response.reg_data[31:0] = data2output.word_level[dcache_request_on_wait.addr[2:2]];
+        BYTE: dcache_response.reg_data[7:0]  = data2output.byte_level[dcache_request_on_wait.addr[2:0]];
+        HALF: dcache_response.reg_data[15:0] = data2output.half_level[dcache_request_on_wait.addr[2:1]];
+        WORD: dcache_response.reg_data[31:0] = data2output.word_level[dcache_request_on_wait.addr[2:2]];
     endcase
     
 end
@@ -801,7 +809,7 @@ end
 
 always_ff @( posedge clock ) begin 
     if (reset) begin
-        dcache_response             <= '0;
+        // dcache_response             <= '0;
         main_cache_lines            <= '0;
         victim_cache_lines          <= '0;
         n_vc_avail                  <= `N_VC_CL;
@@ -812,7 +820,7 @@ always_ff @( posedge clock ) begin
         $display("inside ff, N_MSHR: %d", `N_MSHR);
         $display("inside ff, N_VC_CL: %d", `N_VC_CL);
     end else begin
-        dcache_response             <= next_dcache_response;
+        // dcache_response             <= next_dcache_response;
         main_cache_lines            <= next_main_cache_lines;
         victim_cache_lines          <= next_victim_cache_lines;
         n_vc_avail                  <= next_n_vc_avail;

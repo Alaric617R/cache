@@ -224,6 +224,24 @@ module testbench;
         endcase
     endtask
 
+    task print_this_cycle_request;
+    if (~dcache_request.valid) begin
+        $display("/******** THIS CYCLE REQUEST NOT VALID!!!! **********/");
+    end else begin
+        $display("/******** THIS CYCLE REQUEST **********/");
+        $display("/* TIME: %d */", $time);
+        case(dcache_request.mem_op)
+            MEM_READ: $display("MEM_OP: READ");
+            MEM_WRITE: $display("MEM_OP: WRITE");
+        endcase
+        $display("ADDR: %0b", dcache_request.addr);
+        $display("SIZE: %0d", dcache_request.size);
+        $display("WRITE_CONTENT: %0d", dcache_request.write_content);
+        $display("VALID: %0d", dcache_request.valid);
+        $display("PC: %0h", dcache_request.pc);
+    end
+    endtask
+
     task print_this_cycle_state;
         $display("/********************* THIS CYCLE STATE *********************/");
         $display("/* TIME: %d */", $time);
@@ -307,7 +325,7 @@ module testbench;
 
 
         @(negedge clock)  #3;
-        
+
         @(posedge clock);
         dcache_request = gen_dcache_write_request(32'h1010, HALF, 32'd66, 1);
 

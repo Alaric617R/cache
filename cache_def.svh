@@ -115,6 +115,10 @@ typedef struct packed {
 typedef struct packed {
     logic valid;
     MEM_ADDR_T addr;
+    logic addr_not_in_main_cache;
+    logic addr_not_in_victim_cache;
+    logic addr_not_in_MSHR_packet;
+    logic addr_not_in_MSHR_table;
 } PREFETCH_ADDR_T;
 
 // number of MSHR registers

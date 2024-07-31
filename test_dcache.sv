@@ -515,12 +515,12 @@ module testbench;
             $finish;
         `endif 
 
-        @(negedge clock)  #3;
+        @(negedge clock)  #6;
         
         print_this_cycle_state;
         $display("RESET: %d", reset);
 
-        @(negedge clock)  #3;
+        @(negedge clock)  #6;
         reset = 0;
         print_this_cycle_state;
         $display("RESET: %d", reset);
@@ -529,11 +529,11 @@ module testbench;
         @(posedge clock);
         dcache_request = gen_dcache_read_request(32'h1010, WORD, 1);
 
-        @(negedge clock)  #3;
+        @(negedge clock)  #6;
         print_this_cycle_state;
 
 
-        @(negedge clock)  #3;
+        @(negedge clock)  #6;
         print_this_cycle_state;
 
         @(posedge clock);
@@ -542,22 +542,22 @@ module testbench;
         print_this_cycle_state;
 
 
-        @(negedge clock)  #3;
+        @(negedge clock)  #6;
         print_this_cycle_state;
 
-        @(negedge clock)  #3;
+        @(negedge clock)  #6;
         print_this_cycle_state;
 
         
-        @(negedge clock)  #3;
+        @(negedge clock)  #6;
         print_this_cycle_state;
 
                 
-        @(negedge clock)  #3;
+        @(negedge clock)  #6;
         print_this_cycle_state;
 
                 
-        @(negedge clock)  #3;
+        @(negedge clock)  #6;
         print_this_cycle_state;
 
 

@@ -555,6 +555,13 @@ function  addr_not_in_MSHR_packet(MEM_ADDR_T addr);
     else return 1;
 endfunction
 
+function addr_not_in_MSHR_table(MEM_ADDR_T addr);
+    for (int i=0; i<`N_MSHR; i++) begin
+        if (mshr_table[i].valid & mshr_table[i].cache_line_addr == addr) return 0;
+    end
+    return 1;
+endfunction
+
 PREFETCH_ADDR_T [`N_PF:0] addrs2mshr;
 MEM_ADDR_T base_addr; // address of the memory request
 /** modify addrs2mshr **/
@@ -565,7 +572,12 @@ always_comb begin : gen_new_mshr_entry
         addrs2mshr[i].addr = base_addr + i*8;
         addrs2mshr[i].valid = addr_not_in_main_cache(base_addr + i*8)   & 
                               addr_not_in_victim_cache(base_addr + i*8) & 
-                              addr_not_in_MSHR_packet(base_addr + i*8);
+                              addr_not_in_MSHR_packet(base_addr + i*8) &
+                              addr_not_in_MSHR_table(base_addr + i*8);
+        addrs2mshr[i].addr_not_in_main_cache    = addr_not_in_main_cache(base_addr + i*8);
+        addrs2mshr[i].addr_not_in_victim_cache  = addr_not_in_victim_cache(base_addr + i*8);
+        addrs2mshr[i].addr_not_in_MSHR_packet   = addr_not_in_MSHR_packet(base_addr + i*8);
+        addrs2mshr[i].addr_not_in_MSHR_table    = addr_not_in_MSHR_table(base_addr + i*8);
 
     end
 end
@@ -638,7 +650,6 @@ always_comb begin : manage_MSHR
     /** deal with memory responses and free MSHR entry when STATE IS NOT FLUSH **/
     if ((Dmem2proc_tag != 0) & (state != FLUSH) ) begin
         for (int i=0; i<`N_MSHR;i++) begin
-            if (mshr_table[i].valid) $display("i: %0d mshr: %0b [%0d], dmemtag: %0b [%0d] issued: %0b",i,mshr_table[i].Dmem2proc_tag,mshr_table[i].Dmem2proc_tag, Dmem2proc_tag,Dmem2proc_tag,mshr_table[i].issued) ;
             if (mshr_table[i].valid & (mshr_table[i].Dmem2proc_tag == Dmem2proc_tag) & mshr_table[i].issued) begin
                 assert(mshr_table[i].mem_op == MEM_READ) else $display("MSHR: memory response tag matched with STORE operation!");
                 tmp_next_1_mshr_table[i] = '0;    // clear MSHR entry when finished
@@ -678,9 +689,12 @@ always_comb begin : manage_MSHR
 
     /** allocate new MSHR entry when there are enough MSHR free entry **/
 `ifdef ALOC_MSHR_UPON_MSHR_ETY_HIY
-    can_allocate_new_mshr_entry =  ( (state == READY) & (next_state == WAIT) ) | ( (state == WAIT_MSHR) & (next_state == WAIT) );
+    can_allocate_new_mshr_entry =  ( (state == READY) & (next_state == WAIT) ) | 
+                                   ( (state == WAIT_MSHR) & (next_state == WAIT) );
 `else
-    can_allocate_new_mshr_entry =  (~mshr_hit) & ( (state == READY) & (next_state == WAIT) ) | ( (state == WAIT_MSHR) & (next_state == WAIT) );
+    can_allocate_new_mshr_entry =  (~mshr_hit) & 
+                                   ( (state == READY) & (next_state == WAIT) ) | 
+                                   ( (state == WAIT_MSHR) & (next_state == WAIT) );
 `endif
     for (int i=0; i<`N_PF+1;i++) begin
         tmp_next_2_mshr_table[free_mshr_entry_idx[i]].valid = addrs2mshr[i].valid & can_allocate_new_mshr_entry;
@@ -809,6 +823,16 @@ always_ff @(negedge clock) begin
             $write("  write_content: %0d, ", next_mshr_table[i].write_content);
             $display("");
         end
+    end
+    $display("/*** addrs2mshr ***/");
+    for (int i=0; i<`N_PF+1;i++) begin
+        $write("addrs2mshr[%0d]  addr:%0b", i, addrs2mshr[i].addr);
+        $write("  valid:%0b", addrs2mshr[i].valid);
+        $write("  addr_not_in_mc:%0b", addrs2mshr[i].addr_not_in_main_cache);
+        $write("  addr_not_in_vc:%0b", addrs2mshr[i].addr_not_in_victim_cache);
+        $write("  addr_not_in_pkt:%0b", addrs2mshr[i].addr_not_in_MSHR_packet);
+        $write("  addr_not_in_tbl:%0b", addrs2mshr[i].addr_not_in_MSHR_table);
+        $write("\n");
     end
 end
 `endif

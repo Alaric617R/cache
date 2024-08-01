@@ -342,7 +342,7 @@ always_comb begin : manage_main_cache
                 next_main_cache_lines[cache_line_index_for_new_data].addr  = mshr2dcache_packet.cache_line_addr;
             `endif 
         end
-        if (need_to_evict | (~loaded_CL_same_addr_as_evicted_CL) ) begin
+        if ( (need_to_evict & mshr2dcache_packet.is_req) | (~loaded_CL_same_addr_as_evicted_CL) ) begin
             // transmit evicted cache line to victim cache
             main_cache_line_evicted = main_cache_lines[cache_line_index_for_new_data];
             main_cache_line_evicted_addr = {main_cache_lines[cache_line_index_for_new_data].tag, cache_line_index_for_new_data, 3'b0};

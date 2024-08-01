@@ -210,7 +210,7 @@ always_comb begin
     endcase
 
 end
-`endif 
+`endif
 
 /*** modify request_finished & next_dcache_request_on_wait  ***/
 // for write-miss, the request finished when the CL needed to be written is brought to cache since it's WRITE-BACK
@@ -330,7 +330,7 @@ always_comb begin : manage_main_cache
             end
     end
     
-    // cache miss, response from MSHR
+    // cache miss, or response from MSHR
     if ( ~mshr2dcache_packet_USED & mshr2dcache_packet.valid & mshr2dcache_packet.mem_op == MEM_READ) begin /** Date forwarded from MSHR-memory response packet **/
         main_cache_response_case = FWD_FROM_MSHR_PKT;
         if (~need_to_evict | (need_to_evict & mshr2dcache_packet.is_req) ) begin
@@ -340,8 +340,9 @@ always_comb begin : manage_main_cache
             next_main_cache_lines[cache_line_index_for_new_data].tag   = mshr2dcache_packet.cache_line_addr[`XLEN-1:`XLEN-`DC_TAG_LEN];
             `ifdef DEBUG 
                 next_main_cache_lines[cache_line_index_for_new_data].addr  = mshr2dcache_packet.cache_line_addr;
-            `endif 
+            `endif
         end
+
         if ( (need_to_evict & mshr2dcache_packet.is_req) | (~loaded_CL_same_addr_as_evicted_CL) ) begin
             // transmit evicted cache line to victim cache
             main_cache_line_evicted = main_cache_lines[cache_line_index_for_new_data];
@@ -531,6 +532,19 @@ end
 
 /*** manage MSHR table ***/
 
+// flush MSHR table completed
+always_comb begin
+    mshr_flush_finished = '1;
+    if ( state == FLUSH ) begin
+        for (int i=0; i<`N_MSHR; i++) begin
+            if (mshr_table[i].valid) begin
+                mshr_flush_finished = '0;
+                break;
+            end
+        end
+    end
+end
+
 // new MSHR entry for request and prefetch cache line
 // NOTE: prefetch for both LOAD and STORE !!!
 // PREVENT CACHE LINE WAITING TO BE WRITTEN BACK BE LOADED FROM MEMORY AGAIN, which will not be the most updated version of that CL
@@ -570,8 +584,8 @@ always_comb begin : gen_new_mshr_entry
     base_addr  = (state == READY) ? dcache_request.addr : dcache_request_on_wait.addr;
     for (int i=0; i<`N_PF+1;i++) begin
         addrs2mshr[i].addr = base_addr + i*8;
-        addrs2mshr[i].valid = addr_not_in_main_cache(base_addr + i*8)   & 
-                              addr_not_in_victim_cache(base_addr + i*8) & 
+        addrs2mshr[i].valid = addr_not_in_main_cache(base_addr + i*8)   &
+                              addr_not_in_victim_cache(base_addr + i*8) &
                               addr_not_in_MSHR_packet(base_addr + i*8) &
                               addr_not_in_MSHR_table(base_addr + i*8);
         addrs2mshr[i].addr_not_in_main_cache    = addr_not_in_main_cache(base_addr + i*8);
@@ -626,7 +640,7 @@ always_comb begin : manage_MSHR
     // `ifdef DEBUG
     //     dbg_n_mshr_entry_freed_cnt = '0;
     //     dbg_n_mshr_entry_occupied_cnt = '0;
-    // `endif 
+    // `endif
 
     tmp_next_1_mshr_table   = mshr_table;
     next_n_mshr_avail       = n_mshr_avail;
@@ -634,7 +648,6 @@ always_comb begin : manage_MSHR
     mshr2dcache_packet = '0;
 
 
-    
     /** flush MSHR when done, invalidate all LOAD operations **/
     if (state == FLUSH) begin
         for (int i=0; i<`N_MSHR; i++) begin
@@ -689,11 +702,11 @@ always_comb begin : manage_MSHR
 
     /** allocate new MSHR entry when there are enough MSHR free entry **/
 `ifdef ALOC_MSHR_UPON_MSHR_ETY_HIY
-    can_allocate_new_mshr_entry =  ( (state == READY) & (next_state == WAIT) ) | 
+    can_allocate_new_mshr_entry =  ( (state == READY) & (next_state == WAIT) ) |
                                    ( (state == WAIT_MSHR) & (next_state == WAIT) );
 `else
-    can_allocate_new_mshr_entry =  (~mshr_hit) & 
-                                   ( (state == READY) & (next_state == WAIT) ) | 
+    can_allocate_new_mshr_entry =  (~mshr_hit) &
+                                   ( (state == READY) & (next_state == WAIT) ) |
                                    ( (state == WAIT_MSHR) & (next_state == WAIT) );
 `endif
     for (int i=0; i<`N_PF+1;i++) begin
@@ -998,7 +1011,7 @@ assign dbg_request_finished             = request_finished;
 assign dbg_mshr2dcache_packet           = mshr2dcache_packet;
 assign dbg_vic_cache_line_evicted       = vic_cache_line_evicted;
 assign dbg_main_cache_line_evicted      = main_cache_line_evicted;
-assign dbg_maincache_line_evicted_addr  = main_cache_line_evicted_addr;
+assign dbg_main_cache_line_evicted_addr  = main_cache_line_evicted_addr;
 assign dbg_main_cache_line_upon_hit     = main_cache_line_upon_hit;
 assign dbg_vic_cache_line_upon_hit      = vic_cache_line_upon_hit;
 // main cache related

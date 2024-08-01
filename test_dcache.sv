@@ -280,7 +280,7 @@ module testbench;
             FWD_FROM_MSHR_PKT: $display("MAIN_CACHE_RESPONSE_CASE: FWD_FROM_MSHR_PKT");
         endcase
         $display("mshr2dcache_packet: VALID: %0d is_req: %0d", dbg_mshr2dcache_packet.valid, dbg_mshr2dcache_packet.is_req);
-        $display("need_to_evict & mshr2dcache_packet.is_req: %0d", dbg_need_to_evict & dbg_mshr2dcache_packet.is_req)
+        $display("need_to_evict & mshr2dcache_packet.is_req: %0d", dbg_need_to_evict & dbg_mshr2dcache_packet.is_req);
         if (dbg_main_cache_line_evicted.valid) begin
             $write("main_cache_line_evicted: VALID  ");
             $display(" addr: %0b, tag: %0b, dirty: %0d\n", dbg_main_cache_line_evicted.addr, dbg_main_cache_line_evicted.tag, dbg_main_cache_line_evicted.dirty);

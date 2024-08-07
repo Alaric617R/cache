@@ -60,7 +60,7 @@ module trace_driver(
     // read one line on each posedge and parse
     always @(posedge clock or posedge reset) begin
         if (reset) begin
-            dcache_request.valid = 0;
+            output_dcache_request.valid = 0;
             output_finish = 0;
         end else begin
             if (stall == 1) begin

@@ -80,7 +80,7 @@ typedef struct packed {
   MEM_ADDR_T addr;  // {(`XLEN-3)'b?, 3'b0} last three bits must be zero
   MEM_SIZE size;    // byte, half, word
   REG_DATA_T write_content;
-  logic valid;   
+  logic valid;
   PC_T pc;
 } DCACHE_REQUEST;
 

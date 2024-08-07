@@ -319,19 +319,33 @@ $(TESTED_MODULES:=.cov.verdi): %.cov.verdi: %.cov.vdb
 # To run a program on simv or syn_simv, see the program execution section
 # This is done automatically with 'make <my_program>.out'
 
+# HEADERS = cache_def.svh \
+# 		  sys_defs.svh
+
+
+# TESTBENCH = test_dcache.sv \
+# 			mem.sv \
+# 			# test/pipe_print.c
+
+# # you could simplify this line with $(wildcard verilog/*.sv) - but the manual way is more explicit
+# # SOURCES = verilog/pipeline.sv 
+
+
+# SOURCES = cache.sv
+
+
 HEADERS = cache_def.svh \
 		  sys_defs.svh
 
 
-TESTBENCH = test_dcache.sv \
-			mem.sv \
+TESTBENCH = test_trace_driver.sv \
 			# test/pipe_print.c
 
 # you could simplify this line with $(wildcard verilog/*.sv) - but the manual way is more explicit
 # SOURCES = verilog/pipeline.sv 
 
 
-SOURCES = cache.sv
+SOURCES = trace_driver.sv
 
 SYNTH_FILES = synth/pipeline.vg
 

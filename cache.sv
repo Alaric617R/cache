@@ -166,6 +166,9 @@ logic [`XLEN - 1 : `N_IDX_BITS + `DC_BO] dcache_req_CL_tag; // cache line tag of
 /*** when pipeline should stall ***/
 assign stall_out = ~(state == READY);
 
+/*** when flush is done ***/
+assign flush_finished = vic_cache_flush_finished;
+
 /*** cache hit ***/
 assign cache_hit = (main_cache_hit | vc_hit | mshr_real_hit) & (state == READY);
 
@@ -256,7 +259,7 @@ logic need_to_evict_MSHR_real_hit;
 
 
 DBG_MAIN_CACHE_STATE_T main_cache_response_case;
-
+logic mc_flush_flag;
 always_comb begin : manage_main_cache
     next_main_cache_lines = main_cache_lines;
     mshr2dcache_packet_USED = '0;
@@ -350,6 +353,23 @@ always_comb begin : manage_main_cache
         end
     end
 
+    // manage flush
+    mc_flush_flag = '0;
+    if ((state == FLUSH) & mshr_flush_finished) begin
+        for (int i=0; i<`N_CL; i++) begin
+            if (main_cache_lines[i].dirty & main_cache_lines[i].valid) begin
+                main_cache_line_evicted = main_cache_lines[i];
+                main_cache_line_evicted_addr = {main_cache_lines[i].tag, i, 3'b0};
+                next_main_cache_lines[i].dirty = 0;
+                mc_flush_flag = '1;
+                break;
+            end
+        end
+        if (~mc_flush_flag) begin
+            main_cache_flush_finished = '1;
+        end
+    end
+
     
 end
 `elsif  TWO_WAY_SET_ASSOCIATIVE
@@ -409,6 +429,8 @@ logic [$clog2(`N_VC_CL) : 0] vc_free_index;   // if no need to evict, this index
 // temporary variable signal
 logic [$clog2(`N_VC_CL) : 0] current_smallest_index;
 logic [$clog2(`N_VC_CL) : 0] current_smallest_lru;
+
+logic vc_flush_flag;
 always_comb begin : vc_evict_upon_full_find_avail_index
     vc_need_evict = '0;
     vc_CL_evicted = '0;
@@ -440,6 +462,23 @@ always_comb begin : vc_evict_upon_full_find_avail_index
             end
         end
     end
+
+    // manage flush
+    vc_flush_flag = '0;
+    if ((state == FLUSH) & (mc_flush_flag)) begin
+        for (int i=0; i<`N_VC_CL; i++) begin
+            if (victim_cache_lines[i].valid) begin
+                vc_CL_evicted = victim_cache_lines[i];
+                vc_CL_evicted_index = i;
+                vc_flush_flag = '1;
+                break;
+            end
+        end
+        if (~vc_flush_flag) begin
+            vic_cache_flush_finished = '1;
+        end
+    end
+
 end
 
 logic [$clog2(`N_VC_CL) : 0] index_selector; // select free_index if not full, select evict_index if full
@@ -535,7 +574,7 @@ end
 // flush MSHR table completed
 always_comb begin
     mshr_flush_finished = '1;
-    if ( state == FLUSH ) begin
+    if ( (state == FLUSH ) & (~main_cache_flush_finished)) begin
         for (int i=0; i<`N_MSHR; i++) begin
             if (mshr_table[i].valid) begin
                 mshr_flush_finished = '0;
